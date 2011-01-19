@@ -1,0 +1,11 @@
+SciDB-HDF5
+
+Quick notes
+-----------
+
+Prerequisites:
+A checkout of SciDB  -- scidb.org/download
+CMake -- www.cmake.org
+HDF5 libraries and headers (e.g., yum install hdf5 hdf5-devel)
+
+
