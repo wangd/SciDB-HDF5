@@ -1,3 +1,3 @@
 
 
-add_executable(SciDB-HDF5 load.cc)
+add_executable(loader loader.cc)
