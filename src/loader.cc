@@ -2,6 +2,8 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <string.h> // memcpy, memset
+#include <algorithm>
 
 #ifndef H5_NO_NAMESPACE
 #ifndef H5_NO_STD
@@ -75,7 +77,7 @@ void
 Loader::doOneGroup(const std::string& objName, 
                    H5G_obj_t objType, 
                    const std::string& prefix, 
-                   H5File file) {
+                   H5::H5File file) {
     std::string thePrefix = prefix;
     int len = thePrefix.length();
     char c = thePrefix[len-1];
@@ -84,7 +86,7 @@ Loader::doOneGroup(const std::string& objName,
     }
     thePrefix += objName;
     if ( objType == H5G_GROUP ) {
-        Group g = file.openGroup(thePrefix);
+        H5::Group g = file.openGroup(thePrefix);
         int i, n = g.getNumObjs();
         for (i=0 ; i<n ; i++) {
             H5G_obj_t t = g.getObjTypeByIdx(i);
@@ -107,7 +109,7 @@ Loader::processDataSet(const std::string & dataSetName) {
     _attr.clear();
     _dim.clear();
     
-    H5File file( FILE_NAME, H5F_ACC_RDONLY );
+    H5::H5File file( FILE_NAME, H5F_ACC_RDONLY );
 
     DataSet dataSet = file.openDataSet(dataSetName);
     H5T_class_t type_class = dataSet.getTypeClass();
@@ -155,7 +157,7 @@ Loader::processDataSet(const std::string & dataSetName) {
                              // so set it to 1
         dataSpace.getSimpleExtentDims(&curDims, &maxDims);
         OneDim oneDim(0, maxDims, curDims);
-        static unsigned long long MAXD = 100000000000000;
+        static unsigned long long MAXD = 100000000000000ULL;
         if (maxDims > MAXD ) {
             oneDim.d2 = OneDim::UNLIMITED;
         }
@@ -174,7 +176,7 @@ Loader::processDataSet(const std::string & dataSetName) {
 void
 Loader::dumpSchema(const std::string & dataSetName) {
     std::ofstream f(outFNameSchema, std::ios::out | std::ios::app);
-    f << "\nCREATE ARRAY " << covertDataSetNameToArrayName(dataSetName)
+    f << "\nCREATE ARRAY " << convertDataSetNameToArrayName(dataSetName)
       << " (" << attributesToString() << "\n) "
       << "[" << dimensionsToString() << "];" << endl;
     f.close();
@@ -774,7 +776,7 @@ Loader::processArrayType(ArrayType& arrayType) {
 
 // Replaces '/', ':' and '.' with '_'. Also, remove leading '/'
 std::string
-Loader::covertDataSetNameToArrayName(const std::string & dataSetName) {
+Loader::convertDataSetNameToArrayName(const std::string & dataSetName) {
     std::string rep(dataSetName, 1);
     std::replace( rep.begin(), rep.end(), '/', '_' );
     std::replace( rep.begin(), rep.end(), ':', '_' );
@@ -789,7 +791,7 @@ int main (void)
 {
     try {
         //Exception::dontPrint();
-        H5File file( FILE_NAME, H5F_ACC_RDONLY );
+        H5::H5File file( FILE_NAME, H5F_ACC_RDONLY );
         std::string prefix = "";
 
         Loader loader;
@@ -806,16 +808,16 @@ int main (void)
         //    DATASPACE  SIMPLE { ( 42247 ) / ( H5S_UNLIMITED ) }
         // }
         
-    } catch( FileIException error ) {
+    } catch( H5::FileIException error ) {
         error.printError();
         return -1;
-    } catch( DataSetIException error ) {
+    } catch( H5::DataSetIException error ) {
         error.printError();
         return -1;
-    } catch( DataSpaceIException error ) {
+    } catch( H5::DataSpaceIException error ) {
         error.printError();
         return -1;
-    } catch( DataTypeIException error ) {
+    } catch( H5::DataTypeIException error ) {
         error.printError();
         return -1;
     }

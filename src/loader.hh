@@ -6,43 +6,55 @@
 #include <vector>
 #include <ostream>
 
-#ifndef H5_NO_NAMESPACE
-using namespace H5;
-#endif
+// #ifndef H5_NO_NAMESPACE
+// using namespace H5;
+// #endif
 
 class Loader {
 public:
+    typedef H5::ArrayType ArrayType;
+    typedef H5::CompType CompType;
+    typedef H5::DataSet DataSet;
+    typedef H5::DataSpace DataSpace;
+    typedef H5::DataType DataType;
+    typedef H5::EnumType EnumType;
+    typedef H5::PredType PredType;
+    typedef H5::VarLenType VarLenType;
+    
     Loader();
-    void doOneGroup(const std::string&, 
-                    H5G_obj_t,
-                    const std::string&,
-                    H5File);
+    void doOneGroup(const std::string& objName, 
+                    H5G_obj_t objType,
+                    const std::string& prefix,
+                    H5::H5File file);
 
     // keep public for now for debugging
-    void processDataSet(const std::string &);
+    void processDataSet(const std::string& dataSetName);
 
 private:
-    void addAttrIntType(const DataType&, const H5std_string&);
-    void addAttrFloatType(const DataType&, const H5std_string&);
-    void addAttrStringType(const DataType&, const H5std_string&);
-    void addAttrEnumType(const DataType&, const H5std_string&);
+    void addAttrIntType(const DataType& dt, const H5std_string& mName);
+    void addAttrFloatType(const DataType& dt, const H5std_string& mName);
+    void addAttrStringType(const DataType& dt, const H5std_string& mName);
+    void addAttrEnumType(const DataType& dt, const H5std_string& mName);
 
-    void flattenArray(ArrayType&, const std::string&);
-    void processCompoundType(const CompType&, const H5std_string&);
-    void processArrayType(ArrayType&);
-    static std::string covertDataSetNameToArrayName(const std::string &);
+    void flattenArray(ArrayType& arrayType, const std::string& mName);
+    void processCompoundType(const CompType& ct, const H5std_string& parentMName);
+    void processArrayType(ArrayType& arrayType);
+    static std::string convertDataSetNameToArrayName(const std::string& dataSetName);
     static std::string print_H5T_class_t_Name(H5T_class_t t);
-    static std::string printPredType(const DataType&);
+    static std::string printPredType(const DataType& dt);
 
     std::string attributesToString() const;
     std::string dimensionsToString() const;
 
-    void dumpSchema(const std::string &);
-    void dumpData(const std::string &, DataSet &, H5T_class_t, hsize_t);
-    void dumpData_1dArray_compound(const std::string &, DataSet &, 
-                                   H5T_class_t, hsize_t);
-    void dumpData_mdArray_nonCompound(const std::string &, DataSet &, 
-                                      H5T_class_t, hsize_t);
+    void dumpSchema(const std::string& dataSetName);
+    void dumpData(const std::string& dataSetName, DataSet& dataSet, 
+                  H5T_class_t typeClass, hsize_t curDim);
+    void dumpData_1dArray_compound(const std::string& dataSetName, 
+                                   DataSet& dataSet, 
+                                   H5T_class_t typeClass, hsize_t curDim);
+    void dumpData_mdArray_nonCompound(const std::string& dataSetName,
+                                      DataSet& dataSet, 
+                                      H5T_class_t typeClass, hsize_t curDim);
     
 private:
     class OneAttr {
@@ -79,4 +91,4 @@ private:
     friend std::ostream& operator<<(std::ostream&, const Loader::OneDim&);
 };
 
-#endif
+#endif // LOADER_HH
