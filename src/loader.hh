@@ -6,10 +6,6 @@
 #include <vector>
 #include <ostream>
 
-// #ifndef H5_NO_NAMESPACE
-// using namespace H5;
-// #endif
-
 class Loader {
 public:
     typedef H5::ArrayType ArrayType;

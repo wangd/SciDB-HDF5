@@ -5,16 +5,12 @@
 #include <string.h> // memcpy, memset
 #include <algorithm>
 
-#ifndef H5_NO_NAMESPACE
-#ifndef H5_NO_STD
-    using std::cout;
-    using std::endl;
-#endif  // H5_NO_STD
-#endif
-
-#ifndef LOADER_HH
 #include "loader.hh"
-#endif
+
+// Namespace import
+using std::cout;
+using std::endl;
+
 
 const H5std_string FILE_NAME( "sxrcom10-r0232.h5" );
 
