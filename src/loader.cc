@@ -1,3 +1,4 @@
+#include <cassert>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -27,6 +28,36 @@ const char* outFNameData   = "/tmp/scidbData.sql";
 // FIXME: variable length strings
 
 // FIXME big/small endian
+
+// ========================================================================
+// Helpers
+// ========================================================================
+namespace {
+
+    // Array printer.
+    template <typename T>
+    std::string arrayToStr(T const* arr, int len) {
+        std::stringstream s;
+        s << "[";
+        for(int i=0; i < len; ++i) {
+            if(i > 0) s << ", ";
+            s << arr[i];
+        }
+        s << "]";
+        return s.str();
+    }
+
+    void printSpaceArray(void* buffer, ArrayType const& aType) {
+#if 0   
+        for ( i=0 ; i<nElemsInArray ; i++ ) {
+            cout << *(reinterpret_cast<uint16_t*> (buffer+2)) << " ";
+        }
+#endif
+        
+    }
+
+
+}
 
 // ============================================================================
 // ============================================================================
@@ -89,6 +120,7 @@ Loader::doOneGroup(const std::string& objName,
         for (i=0 ; i<n ; i++) {
             H5G_obj_t t = g.getObjTypeByIdx(i);
             const H5std_string gN = g.getObjnameByIdx(i);
+            std::cout << "Visiting " << gN << std::endl;
             doOneGroup(gN, t, thePrefix, file);
         }
     } else if ( objType == H5G_DATASET ) {
@@ -370,7 +402,7 @@ Loader::dumpData_mdArray_nonCompound(const std::string& dataSetName,
     
     int i, rank = _dim.size()-1;
     std::vector< OneDim >::const_iterator itrD;
-    hsize_t* dims = new hsize_t[rank];
+    hsize_t dims[rank];
     for ( i=0, itrD=_dim.begin() ; i<rank ; itrD++, i++ ) {
         int n = itrD->curNElems;
         bufferSize *= n;
@@ -383,29 +415,56 @@ Loader::dumpData_mdArray_nonCompound(const std::string& dataSetName,
         return;
     }
     hid_t arrayType = H5Tarray_create(_attr[0].predType->getId(), rank, dims);
-    
-    hsize_t dHsSize = 1 ;   // data hyperslab size, read one elem at a time
-    hsize_t dHsOffs = 0;    // data hyperslab offset, gradually increment
-
+    ArrayType aType = dataSet.getArrayType();
     cout << "working with buffer size " << bufferSize 
          << ", will loop " << nElemsLastDim << " times" << endl;
 
-    char* buffer = new char[bufferSize];
+    char* buffer = new char[bufferSize+1];
+    buffer[bufferSize] = '\xab';
     
-    DataSpace dataSpace = dataSet.getSpace();
-
+    DataSpace fileSpace = dataSet.getSpace();
+    
     //DataSpace memSpace(nDims-1, mHsSize);
     //memSpace.selectHyperslab(H5S_SELECT_SET, mHsSize, mHsOffs);
+    int const combinedRank = _dim.size();
+    hsize_t slabSize[combinedRank]; // Dataspace Item size
+    for(int i=0; i < combinedRank-1; ++i) slabSize[i] = dims[i];
+    slabSize[combinedRank-1] = 1; // Select one dataspace item at a time.
+    hsize_t dsOffset[combinedRank]; // Dataspace item offset
+    memset(dsOffset, 0, combinedRank * sizeof(hsize_t));
+
+    int dDimCount = fileSpace.getSimpleExtentNdims();    
+    hsize_t dDims[dDimCount];
+    hsize_t dMaxDims[dDimCount];
+    int r = fileSpace.getSimpleExtentDims(dDims, dMaxDims);
+    assert(r == dDimCount);
+    assert(dDimCount == 1); // Only understand simple 1-D dataspaces
+    // (that could contain n-D arrays)
+    std::cout << "extracted array dims=" << arrayToStr(dDims, dDimCount)
+              << " maxDims=" << arrayToStr(dMaxDims, dDimCount) 
+              << std::endl;
+    hsize_t start = 0; // should be array for >1D dataspaces
+    hsize_t count = 1; // should be array for >1D dataspaces
+    DataSpace memSpace(dDimCount, dDims);
+    memSpace.selectHyperslab(H5S_SELECT_SET, &count, &start);
+    for(int elemOff=0 ; elemOff<nElemsLastDim ; ++elemOff ) {
+        dsOffset[combinedRank-1] = elemOff;
+        cout << "hsize is " << arrayToStr(dims, rank) 
+             << ", idx is " << arrayToStr(dsOffset,combinedRank) << endl;
+        cout << "Arraysize=" << aType.getSize() << std::endl;
+        start = elemOff;
+        fileSpace.selectHyperslab(H5S_SELECT_SET, &count, &start);
     
-    for (dHsOffs=0 ; dHsOffs<nElemsLastDim ; dHsOffs++ ) {
-        cout << "hsize is " << dHsSize << ", offs is " << dHsOffs << endl;
-        
-        dataSpace.selectHyperslab(H5S_SELECT_SET, &dHsSize, &dHsOffs);
+        assert(memSpace.selectValid());
+        assert(fileSpace.selectValid());
+        assert(memSpace.getSelectNpoints() == fileSpace.getSelectNpoints());
+        cout << "npoints=" << memSpace.getSelectNpoints() << std::endl;
 
         memset(buffer, 0, bufferSize);
-        if ( dHsOffs%1001 == 1000 ) cout << dHsOffs << endl;
-
-        dataSet.read(buffer, arrayType, DataSpace::ALL, dataSpace);
+        if ( elemOff % 1001 == 1000 ) 
+            cout << arrayToStr(dsOffset, combinedRank) << endl;
+        dataSet.read(buffer, dataSet.getDataType(), memSpace, fileSpace);
+        //printSpaceArray(buffer, aType);
         for ( i=0 ; i<nElemsInArray ; i++ ) {
             cout << *(reinterpret_cast<uint16_t*> (buffer+2)) << " ";
         }
@@ -414,7 +473,6 @@ Loader::dumpData_mdArray_nonCompound(const std::string& dataSetName,
     }
     delete [] buffer;
 }
-
 // ============================================================================
 // ============================================================================
 
@@ -751,10 +809,10 @@ Loader::processCompoundType(const CompType& ct,
 void
 Loader::processArrayType(ArrayType& arrayType) {
     int i, nDims = arrayType.getArrayNDims();
-    hsize_t dims;
-    arrayType.getArrayDims(&dims);
+    hsize_t dims[nDims];
+    arrayType.getArrayDims(dims);
     for (i=0 ; i<nDims ; i++) {
-        _dim.push_back(OneDim(0, dims, dims));
+        _dim.push_back(OneDim(0, dims[i], dims[i]));
     }
     DataType dt = arrayType.getSuper();
     H5T_class_t dtc = dt.getClass();
@@ -793,8 +851,8 @@ int main (void)
         std::string prefix = "";
 
         Loader loader;
-        loader.doOneGroup("/", H5G_GROUP, prefix, file);
-
+        //loader.doOneGroup("/", H5G_GROUP, prefix, file);
+        loader.doOneGroup("/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1", H5G_GROUP, prefix, file);
         // FIXME: dumping data for flattened arrays
         //loader.processDataSet("/Configure:0000/Epics::EpicsPv/EpicsArch.0:NoDevice.0/SXR:SPS:MPA:01:IN/data");
 
