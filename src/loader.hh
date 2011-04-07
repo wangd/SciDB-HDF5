@@ -17,11 +17,10 @@ public:
     typedef H5::PredType PredType;
     typedef H5::VarLenType VarLenType;
     
-    Loader();
+    explicit Loader(std::string const& filename);
     void doOneGroup(const std::string& objName, 
                     H5G_obj_t objType,
-                    const std::string& prefix,
-                    H5::H5File file);
+                    const std::string& prefix);
 
     // keep public for now for debugging
     void processDataSet(const std::string& dataSetName);
@@ -80,6 +79,8 @@ private:
         static const int UNKNOWN;
     };
 
+    std::string const& _filename;
+    H5::H5File _h5File;
     std::vector< OneAttr > _attr;  // attributes
     std::vector< OneDim > _dim;    // dimensions
     

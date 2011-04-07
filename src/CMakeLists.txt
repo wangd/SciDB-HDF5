@@ -1,8 +1,9 @@
 find_package(ZLIB REQUIRED)
-find_package(Hdf5  REQUIRED)
+# Point at non-system locations via H5INC_PATH and H5LIB_PATH
+find_package(Hdf5  REQUIRED) 
 
 include_directories(${HDF5_INCLUDE_DIR})
-add_executable(loader loader.cc)
+add_executable(loader loader.cc printHdf.cc)
 target_link_libraries(loader ${HDF5_LIBRARIES})
 
 #include(FeatureSummary)

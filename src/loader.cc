@@ -13,15 +13,12 @@ using std::cout;
 using std::endl;
 
 
-const H5std_string FILE_NAME( "sxrcom10-r0232.h5" );
 
 const int Loader::OneDim::UNLIMITED = -1;
 const int Loader::OneDim::UNKNOWN = -2;
 
-
 const char* outFNameSchema = "/tmp/scidbSchema.sql";
 const char* outFNameData   = "/tmp/scidbData.sql";
-
 
 // FIXME: variable length strings
 
@@ -167,7 +164,9 @@ operator<<(std::ostream& os, const Loader::OneDim& o) {
 // ============================================================================
 // ============================================================================
 
-Loader::Loader() {
+Loader::Loader(std::string const& filename) 
+    : _filename(filename), 
+      _h5File(filename, H5F_ACC_RDONLY) {
     _attr.clear();
     _dim.clear();
 
@@ -182,8 +181,7 @@ Loader::Loader() {
 void
 Loader::doOneGroup(const std::string& objName, 
                    H5G_obj_t objType, 
-                   const std::string& prefix, 
-                   H5::H5File file) {
+                   const std::string& prefix) {
     std::string thePrefix = prefix;
     int len = thePrefix.length();
     char c = thePrefix[len-1];
@@ -192,13 +190,13 @@ Loader::doOneGroup(const std::string& objName,
     }
     thePrefix += objName;
     if ( objType == H5G_GROUP ) {
-        H5::Group g = file.openGroup(thePrefix);
+        H5::Group g = _h5File.openGroup(thePrefix);
         int i, n = g.getNumObjs();
         for (i=0 ; i<n ; i++) {
             H5G_obj_t t = g.getObjTypeByIdx(i);
             const H5std_string gN = g.getObjnameByIdx(i);
             std::cout << "Visiting " << gN << std::endl;
-            doOneGroup(gN, t, thePrefix, file);
+            doOneGroup(gN, t, thePrefix);
         }
     } else if ( objType == H5G_DATASET ) {
         processDataSet(thePrefix);
@@ -216,7 +214,8 @@ Loader::processDataSet(const std::string & dataSetName) {
     _attr.clear();
     _dim.clear();
     
-    H5::H5File file( FILE_NAME, H5F_ACC_RDONLY );
+    // Reopen file. FIXME: Is this necessary?
+    H5::H5File file( _filename, H5F_ACC_RDONLY );
 
     DataSet dataSet = file.openDataSet(dataSetName);
     H5T_class_t type_class = dataSet.getTypeClass();
@@ -895,43 +894,6 @@ Loader::convertDataSetNameToArrayName(const std::string & dataSetName) {
 
 // ============================================================================
 // ============================================================================
-
-int main (void)
-{
-    try {
-        //Exception::dontPrint();
-        H5::H5File file( FILE_NAME, H5F_ACC_RDONLY );
-        std::string prefix = "";
-
-        Loader loader;
-        //loader.doOneGroup("/", H5G_GROUP, prefix, file);
-        loader.doOneGroup("/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1", H5G_GROUP, prefix, file);
-        // FIXME: dumping data for flattened arrays
-        //loader.processDataSet("/Configure:0000/Epics::EpicsPv/EpicsArch.0:NoDevice.0/SXR:SPS:MPA:01:IN/data");
-
-        // FIXME: multi-d arrays
-        //loader.processDataSet("/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1/image");
-
-        // DATASET "image" {
-        //    DATATYPE  H5T_ARRAY { [1024][1024] H5T_STD_U16LE }
-        //    DATASPACE  SIMPLE { ( 42247 ) / ( H5S_UNLIMITED ) }
-        // }
-        
-    } catch( H5::FileIException error ) {
-        error.printError();
-        return -1;
-    } catch( H5::DataSetIException error ) {
-        error.printError();
-        return -1;
-    } catch( H5::DataSpaceIException error ) {
-        error.printError();
-        return -1;
-    } catch( H5::DataTypeIException error ) {
-        error.printError();
-        return -1;
-    }
-    return 0;
-}
 
 // ============================================================================
 // ============================================================================
