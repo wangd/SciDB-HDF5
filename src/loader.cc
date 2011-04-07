@@ -47,13 +47,91 @@ namespace {
         return s.str();
     }
 
-    void printSpaceArray(void* buffer, ArrayType const& aType) {
-#if 0   
-        for ( i=0 ; i<nElemsInArray ; i++ ) {
-            cout << *(reinterpret_cast<uint16_t*> (buffer+2)) << " ";
+    void posIncr(hsize_t pos[], hsize_t const dims[], int rank) {
+        int rPos = rank-1;
+        ++pos[rPos];
+        while((pos[rPos] >= dims[rPos]) && (rPos > 0)) {
+                pos[rPos] -= dims[rPos];
+                rPos -= 1;
+                ++pos[rPos];
+        } 
+    }
+    bool posLess(hsize_t const left[], hsize_t const right[], int rank) {
+        for(int i=0; i < rank; ++i) {
+            if(left[i] < right[i]) return true;
         }
-#endif
-        
+        return false;
+    }
+
+    void printSpaceArrayElem(std::ostream& os,
+                             void* buffer, ArrayType const& aType,
+                             uint64_t limit=2000) {
+        // Checking dims really should be const.
+        int rank = const_cast<ArrayType&>(aType).getArrayNDims();
+        hsize_t dims[rank]; // Dimension size
+        hsize_t pos[rank]; // Position
+        // Checking dims really should be const.
+        int r = const_cast<ArrayType&>(aType).getArrayDims(dims);
+        assert(rank == r);
+        assert(rank > 0);
+        DataType baseType = aType.getSuper();
+        H5T_class_t btc = baseType.getClass();
+
+        int incSize = baseType.getSize();
+        int elemCount = 0;
+        // Setup position
+        memset(pos, 0, rank * sizeof(hsize_t));
+
+        cout << "{array " << arrayToStr(dims, rank)  << ", "
+             << aType.getSize() << "} is ";
+
+        // Should hoist the switch statements out of the loop,
+        // but unsure how to do this cleanly.
+        for(char* cursor=static_cast<char*>(buffer); 
+            posLess(pos, dims, rank); 
+            posIncr(pos, dims, rank)) {
+            if(++elemCount > limit) {
+                os << " <limit "<< limit << " reached>";
+                break;
+            }
+
+            if(cursor != static_cast<char*>(buffer)) os << " ";
+            switch(btc) {
+            case H5T_INTEGER:
+                switch(incSize) {
+                case sizeof(int16_t):
+                    os << *reinterpret_cast<int16_t*>(cursor);
+                    break;
+                case sizeof(int32_t):
+                    os << *reinterpret_cast<int32_t*>(cursor);
+                    break;
+                case sizeof(int64_t):
+                    os << *reinterpret_cast<int64_t*>(cursor);
+                    break;
+                default:
+                    throw "Unknown integer type";
+                    break;
+                }
+                break;
+            case H5T_FLOAT:
+                switch(incSize) {
+                case sizeof(float):
+                    os << *reinterpret_cast<float*>(cursor);
+                    break;
+                case sizeof(double):
+                    os << *reinterpret_cast<double*>(cursor);
+                    break;
+                default:
+                    throw "Unknown floating point type";
+                    break;
+                }
+                break;
+            default:
+                    throw "Non numerical types unimplemented";
+                    break;
+            }
+            cursor += incSize; // Advance
+        }
     }
 
 
@@ -397,49 +475,31 @@ Loader::dumpData_mdArray_nonCompound(const std::string& dataSetName,
     }
     // Calculate buffer size. Current logic: read one d-1 array at a time
     // Fail if it is > 128MB
-    long bufferSize = _attr[0].tS;
-    long nElemsInArray = 1;
-    
-    int i, rank = _dim.size()-1;
-    std::vector< OneDim >::const_iterator itrD;
-    hsize_t dims[rank];
-    for ( i=0, itrD=_dim.begin() ; i<rank ; itrD++, i++ ) {
-        int n = itrD->curNElems;
-        bufferSize *= n;
-        nElemsInArray *= n;
-        dims[i] = n;
-    }
-    int nElemsLastDim = itrD->curNElems;
+    ArrayType aType = dataSet.getArrayType();
+    long bufferSize = aType.getSize();
+
     if ( bufferSize > 128 * 1024 * 1024 ) {
         cout << "Array to read is too large" << endl;
         return;
     }
-    hid_t arrayType = H5Tarray_create(_attr[0].predType->getId(), rank, dims);
-    ArrayType aType = dataSet.getArrayType();
-    cout << "working with buffer size " << bufferSize 
-         << ", will loop " << nElemsLastDim << " times" << endl;
 
     char* buffer = new char[bufferSize+1];
     buffer[bufferSize] = '\xab';
     
     DataSpace fileSpace = dataSet.getSpace();
-    
-    //DataSpace memSpace(nDims-1, mHsSize);
-    //memSpace.selectHyperslab(H5S_SELECT_SET, mHsSize, mHsOffs);
-    int const combinedRank = _dim.size();
-    hsize_t slabSize[combinedRank]; // Dataspace Item size
-    for(int i=0; i < combinedRank-1; ++i) slabSize[i] = dims[i];
-    slabSize[combinedRank-1] = 1; // Select one dataspace item at a time.
-    hsize_t dsOffset[combinedRank]; // Dataspace item offset
-    memset(dsOffset, 0, combinedRank * sizeof(hsize_t));
 
     int dDimCount = fileSpace.getSimpleExtentNdims();    
     hsize_t dDims[dDimCount];
     hsize_t dMaxDims[dDimCount];
     int r = fileSpace.getSimpleExtentDims(dDims, dMaxDims);
     assert(r == dDimCount);
-    assert(dDimCount == 1); // Only understand simple 1-D dataspaces
+    assert(dDimCount == 1); // Only understand simple 1-D dataspaces for now
     // (that could contain n-D arrays)
+
+    int nElemsLastDim = dDims[dDimCount-1];
+    cout << "working with buffer size " << bufferSize 
+         << ", will loop " << nElemsLastDim << " times" << endl;
+    
     std::cout << "extracted array dims=" << arrayToStr(dDims, dDimCount)
               << " maxDims=" << arrayToStr(dMaxDims, dDimCount) 
               << std::endl;
@@ -447,27 +507,21 @@ Loader::dumpData_mdArray_nonCompound(const std::string& dataSetName,
     hsize_t count = 1; // should be array for >1D dataspaces
     DataSpace memSpace(dDimCount, dDims);
     memSpace.selectHyperslab(H5S_SELECT_SET, &count, &start);
+    int limit = 500;
     for(int elemOff=0 ; elemOff<nElemsLastDim ; ++elemOff ) {
-        dsOffset[combinedRank-1] = elemOff;
-        cout << "hsize is " << arrayToStr(dims, rank) 
-             << ", idx is " << arrayToStr(dsOffset,combinedRank) << endl;
-        cout << "Arraysize=" << aType.getSize() << std::endl;
+        if(elemOff >= limit) {
+            cout << "Limit reached.";
+            break;
+        }
         start = elemOff;
         fileSpace.selectHyperslab(H5S_SELECT_SET, &count, &start);
-    
         assert(memSpace.selectValid());
         assert(fileSpace.selectValid());
         assert(memSpace.getSelectNpoints() == fileSpace.getSelectNpoints());
-        cout << "npoints=" << memSpace.getSelectNpoints() << std::endl;
-
         memset(buffer, 0, bufferSize);
-        if ( elemOff % 1001 == 1000 ) 
-            cout << arrayToStr(dsOffset, combinedRank) << endl;
+        cout << elemOff << ": ";
         dataSet.read(buffer, dataSet.getDataType(), memSpace, fileSpace);
-        //printSpaceArray(buffer, aType);
-        for ( i=0 ; i<nElemsInArray ; i++ ) {
-            cout << *(reinterpret_cast<uint16_t*> (buffer+2)) << " ";
-        }
+        printSpaceArrayElem(cout, buffer, aType);
         cout << endl;
         
     }
