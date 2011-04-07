@@ -62,8 +62,9 @@ namespace {
     }
 
     void printSpaceArrayElem(std::ostream& os,
-                             void* buffer, ArrayType const& aType,
+                             void* buffer, H5::ArrayType const& aType,
                              uint64_t limit=2000) {
+        using H5::ArrayType;
         // Checking dims really should be const.
         int rank = const_cast<ArrayType&>(aType).getArrayNDims();
         hsize_t dims[rank]; // Dimension size
@@ -72,7 +73,7 @@ namespace {
         int r = const_cast<ArrayType&>(aType).getArrayDims(dims);
         assert(rank == r);
         assert(rank > 0);
-        DataType baseType = aType.getSuper();
+        H5::DataType baseType = aType.getSuper();
         H5T_class_t btc = baseType.getClass();
 
         int incSize = baseType.getSize();
