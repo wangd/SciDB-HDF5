@@ -8,4 +8,26 @@ A checkout of SciDB  -- scidb.org/download
 CMake -- www.cmake.org
 HDF5 libraries and headers (e.g., yum install hdf5 hdf5-devel)
 
+RHEL5 RPMS for HDF5 are available at: 
+http://www.slac.stanford.edu/~danielw/hdf/
+You need the -static and -devel packages at minimum, and probably the plain 
+hdf5 rpm too.
+
+How to build:
+------------
+Standard cmake steps should work.
+
+Suppose you've checked out the source into /home/daniel/scidbhdf
+
+1. Make a build directory, say /home/daniel/scidbhdf-bld
+2. cd into your build directory ("cd /home/daniel/scidbhdf-bld")
+3. "cmake <your-source-directory>" ("cmake /home/daniel/scidbhdf")
+4. Patch locations for dependencies as needed by "ccmake <build-directory>"
+  ("ccmake /home/daniel/scidbhdf-bld",
+    or just "ccmake ." if $PWD=="/home/daniel/scidb-hdf-bld")
+5. Within your build directory, "make"
+
+The "loader" binary will be created within the "src" subdirectory.  It is 
+hardcoded to use a particular HDF5 file and to read a particular tree within.
+
 
