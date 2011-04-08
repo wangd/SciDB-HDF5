@@ -30,6 +30,22 @@ Suppose you've checked out the source into /home/daniel/scidbhdf
 The "loader" binary will be created within the "src" subdirectory.  It is 
 hardcoded to use a particular HDF5 file and to read a particular tree within.
 
+Notes:
+------
+1. You can reconfigure the build type via:
+   For a debug build
+     cmake -DCMAKE_BUILD_TYPE=Debug <build dir>
+   For a release build
+     cmake -DCMAKE_BUILD_TYPE=Release <build dir>
+
+   e.g. if your build directory is /home/daniel/scidbhdf-bld and you want to 
+   configure for debugging, 
+   "cmake -DCMAKE_BUILD_TYPE=Debug /home/daniel/scidbhdf-bld"
+
+2. You might find the "make VERBOSE=1" command useful when troubleshooting
+   build problems.
+
+
 Copyright Notice:
 -----------------
  Copyright 2011 Jacek Becla, Daniel Liwei Wang
