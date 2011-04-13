@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "loader.hh"
+#include "scidb.hh"
 
 // Namespace import
 using std::cout;
