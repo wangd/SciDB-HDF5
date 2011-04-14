@@ -8,6 +8,10 @@ include_directories(${HDF5_INCLUDE_DIR} ${SCIDB_INCLUDE_DIR} ${Boost_INCLUDE_DIR
 add_executable(loader loader.cc printHdf.cc)
 target_link_libraries(loader ${HDF5_LIBRARIES})
 
+set(plugin_src plugin.cc loadOperator.cc H5Array.cc)
+add_library(loadhdf SHARED ${plugin_src})
+
+
 #include(FeatureSummary)
 #print_enabled_features()
 # ZLIB_LIBRARIES m 

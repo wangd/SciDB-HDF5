@@ -6,7 +6,7 @@
 
 class ScidbDb {
 public:
-    
+    ScidbDb() {}
 };
 
 #endif // LOADER_SCIDB_HH
