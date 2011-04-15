@@ -30,6 +30,9 @@ Suppose you've checked out the source into /home/daniel/scidbhdf
 The "loader" binary will be created within the "src" subdirectory.  It is 
 hardcoded to use a particular HDF5 file and to read a particular tree within.
 
+The "libloadhdf.so" is a shared library designed to be a scidb plugin.  It
+is not yet functional.
+
 Notes:
 ------
 1. You can reconfigure the build type via:
