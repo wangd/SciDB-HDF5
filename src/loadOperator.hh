@@ -1,11 +1,11 @@
 #ifndef LOADER_LOADOPERATOR_HH
 #define LOADER_LOADOPERATOR_HH
 
-namespace scidb {
-    class Value; // Forward
-}
+#include <string>
 
-void loadHdf(const scidb::Value* args, scidb::Value& res, void*);
+void loadHdf(std::string const& filePath, 
+             std::string const& hdfPath, 
+             std::string const& arrayName);
 
 
 #endif // LOADER_LOADOPERATOR_HH

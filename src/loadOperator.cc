@@ -11,12 +11,9 @@
 #include "H5Array.hh"
 
 
-void loadHdf(const scidb::Value* args, scidb::Value& res, void*) {
-    // Extract arguments
-    std::string filePath = args[0].getString();
-    std::string hdfPath = args[1].getString();
-    std::string arrayName = args[2].getString();
-
+void loadHdf(std::string const& filePath, 
+             std::string const& hdfPath, 
+             std::string const& arrayName) {
 
     // Do something good.
     H5Array ha(filePath, hdfPath);
@@ -45,5 +42,5 @@ void loadHdf(const scidb::Value* args, scidb::Value& res, void*) {
     }
 
     // Fill results
-    res.setString("SomeArray"); // Fill in result: name of new array
+    //res.setString("SomeArray"); // Fill in result: name of new array
 }
