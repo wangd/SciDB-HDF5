@@ -40,6 +40,8 @@ private:
     void _readType() {
         H5T_class_t type_class = _h5ds.getTypeClass();
         bool hasExtraDim = false;
+        DimVectorPtr dims(new DimVector());
+        AttrVectorPtr attrs;
         // Special handling
         if(type_class == H5T_COMPOUND) {
             H5::CompType ct = _h5ds.getCompType();
@@ -52,9 +54,11 @@ private:
             _complain("No type class found in dataset.");
             break;
         case H5T_INTEGER: // integers
+            std::cout << "int" << std::endl;
             //addAttrIntType(dataSet.getIntType(), "");
             break;
         case H5T_FLOAT: // floats
+            std::cout << "float" << std::endl;
             //addAttrFloatType(dataSet.getFloatType(), "");
             break;
         case H5T_TIME: // date and time
@@ -64,6 +68,7 @@ private:
             _complain("Unexpected type found in dataset.");
             break;
         case H5T_COMPOUND: // compounds
+            std::cout << "compound" << std::endl;
             //processCompoundType(compType, "");
             break;
         case H5T_REFERENCE: // refs
@@ -71,37 +76,80 @@ private:
         case H5T_VLEN: // vlens
             _complain("Unexpected type found in dataset.");
             break;
-        case H5T_ARRAY: // arrays
-            //ArrayType arrayType = dataSet.getArrayType();
-            //processArrayType(arrayType);
+        case H5T_ARRAY: { // arrays
+            H5::ArrayType arrayType = _h5ds.getArrayType();
+            DimVectorPtr addl = _readArrayDims(arrayType);
+            dims->insert(dims->end(), addl->begin(), addl->end());
+            attrs = _readSimpleType(arrayType.getSuper());
+        }
             break;
         default:
             _complain("Unexpected type found in dataset.");
             break;
         } // switch(type_class)
-        
-        // add dimension
-        _readDimensions(hasExtraDim);
-        //_dim.push_back(Dim(0, Dim::UNLIMITED, Dim::UNKNOWN));
-    }    
-
-    void _readDimensions(bool addExtra) {
-        std::vector<Dim> dims;
-        hsize_t curDims = 1;     // default for scalar dataSpace
-        H5::DataSpace dSpace = _h5ds.getSpace();
-        if ( dSpace.isSimple() ) {
-            hsize_t maxDims = 1; // maxDims is not set for scalar dataSpace,
-            // so set it to 1
-            dSpace.getSimpleExtentDims(&curDims, &maxDims);
-            Dim oneDim(0, maxDims, curDims);
-            static unsigned long long MAXD = 100000000000000ULL;
-            if (maxDims > MAXD ) {
-                oneDim.d2 = Dim::UNLIMITED;
-            }
-            dims.push_back(oneDim);
-        } else {
-            dims.push_back(Dim(0, 1, 1));
+        for(unsigned i=0; i < attrs->size(); ++i) {
+            std::cout << "attribute with size " << (*attrs)[i].tS
+                      << " order " << (*attrs)[i].lEnd
+                      << " sign " << (*attrs)[i].sign << std::endl;
         }
+        // add dimension
+        _readDimensions(_h5ds, hasExtraDim);
+
+    }    
+    DimVectorPtr _readArrayDims(H5::ArrayType& at) {
+        DimVectorPtr dims(new DimVector());
+        int rank = at.getArrayNDims();
+        assert(rank > 0);
+        hsize_t* extents = new hsize_t[rank];
+        at.getArrayDims(extents);
+        for(int i=0; i < rank; ++i) { 
+            dims->push_back(Dim(0,extents[i], extents[i]));
+        }
+        delete[] extents;
+        return dims;
+    }
+    AttrVectorPtr _readSimpleType(H5::DataType const& dt) {
+        AttrVectorPtr attrs(new AttrVector());
+        switch(dt.getClass()) {
+        case H5T_INTEGER: // integers
+            attrs->push_back(Attr::makeInteger(dt));
+            break;
+        case H5T_FLOAT: // floats
+            attrs->push_back(Attr::makeFloat(dt));
+            break;
+        case H5T_STRING: // char string
+            attrs->push_back(Attr::makeString(dt));
+            break;
+        default:
+            _complain("Unsupported type found(readSimpleType)");
+        }
+        return attrs;
+    }
+    DimVectorPtr _readDimensions(H5::DataSet& ds, bool addExtra) {
+        DimVectorPtr dims(new DimVector());
+        if(addExtra) dims->push_back(Dim(0,Dim::UNLIMITED, Dim::UNKNOWN));
+
+        H5::DataSpace dSpace = ds.getSpace();
+        if(!dSpace.isSimple()) {  // Simple (nd-array)
+            // Assume scalar (singleton), non-null
+            dims->push_back(Dim(0,1,1));            
+            return dims;
+        }
+
+        int rank = dSpace.getSimpleExtentNdims();        
+        hsize_t* extents = new hsize_t[rank];
+        hsize_t* limits = new hsize_t[rank];  // Ignore for now. 
+        // Might be a good layout/usage hint.
+        int r = dSpace.getSimpleExtentDims(extents, limits);
+        assert(r == rank);
+        for(int i=0; i<rank; ++i) {
+            hsize_t limit = (limits[i] <= Dim::MAX) ?
+                limits[i] : Dim::UNLIMITED;
+            dims->push_back(Dim(0, limit, extents[i]));
+        }
+        delete[] extents;
+        delete[] limits;
+        return dims;
     }
 
     H5::H5File _h5f;
@@ -158,9 +206,9 @@ H5Array::H5Array(std::string const& fPath, std::string const& path)
 
 }
 
-boost::shared_ptr<scidb::ArrayDesc> H5Array::getArrayDesc() const {
-    using scidb::ArrayDesc;
-    boost::shared_ptr<ArrayDesc> desc(new ArrayDesc());
-    // FIXME
-    return desc;
-}
+// boost::shared_ptr<scidb::ArrayDesc> H5Array::getArrayDesc() const {
+//     using scidb::ArrayDesc;
+//     boost::shared_ptr<ArrayDesc> desc(new ArrayDesc());
+//     // FIXME
+//     return desc;
+// }
