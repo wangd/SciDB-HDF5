@@ -5,11 +5,18 @@ find_package(Boost REQUIRED )
 find_package(Scidb REQUIRED)
 
 include_directories(${HDF5_INCLUDE_DIR} ${SCIDB_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
+
+# file dumper
 add_executable(loader loader.cc printHdf.cc)
 target_link_libraries(loader ${HDF5_LIBRARIES})
 
+# SciDb plugin
 set(plugin_src plugin.cc loadOperator.cc H5Array.cc arrayCommon.cc)
 add_library(loadhdf SHARED ${plugin_src})
+
+# test program
+add_executable(testHdf testHdf.cc H5Array.cc arrayCommon.cc)
+target_link_libraries(testHdf ${HDF5_LIBRARIES})
 
 
 #include(FeatureSummary)

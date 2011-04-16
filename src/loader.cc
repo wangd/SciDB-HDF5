@@ -65,8 +65,9 @@ namespace {
         using H5::ArrayType;
         // Checking dims really should be const.
         int rank = const_cast<ArrayType&>(aType).getArrayNDims();
-        hsize_t dims[rank]; // Dimension size
-        hsize_t pos[rank]; // Position
+        
+        hsize_t* dims = new hsize_t[rank]; // Dimension size
+        hsize_t* pos = new hsize_t[rank]; // Position
         // Checking dims really should be const.
         int r = const_cast<ArrayType&>(aType).getArrayDims(dims);
         assert(rank == r);
@@ -129,6 +130,8 @@ namespace {
             }
             cursor += incSize; // Advance
         }
+        delete[] dims;
+        delete[] pos;
     }
 
 
@@ -488,8 +491,8 @@ Loader::dumpData_mdArray_nonCompound(const std::string& dataSetName,
     DataSpace fileSpace = dataSet.getSpace();
 
     int dDimCount = fileSpace.getSimpleExtentNdims();    
-    hsize_t dDims[dDimCount];
-    hsize_t dMaxDims[dDimCount];
+    hsize_t* dDims = new hsize_t[dDimCount];
+    hsize_t* dMaxDims = new hsize_t[dDimCount];
     int r = fileSpace.getSimpleExtentDims(dDims, dMaxDims);
     assert(r == dDimCount);
     assert(dDimCount == 1); // Only understand simple 1-D dataspaces for now
@@ -505,6 +508,9 @@ Loader::dumpData_mdArray_nonCompound(const std::string& dataSetName,
     hsize_t start = 0; // should be array for >1D dataspaces
     hsize_t count = 1; // should be array for >1D dataspaces
     DataSpace memSpace(dDimCount, dDims);
+    delete[] dDims;
+    delete[] dMaxDims;
+    dDims = dMaxDims = NULL;
     memSpace.selectHyperslab(H5S_SELECT_SET, &count, &start);
     int limit = 500;
     for(int elemOff=0 ; elemOff<nElemsLastDim ; ++elemOff ) {
@@ -862,11 +868,13 @@ Loader::processCompoundType(const CompType& ct,
 void
 Loader::processArrayType(ArrayType& arrayType) {
     int i, nDims = arrayType.getArrayNDims();
-    hsize_t dims[nDims];
+    hsize_t* dims = new hsize_t[nDims];
     arrayType.getArrayDims(dims);
     for (i=0 ; i<nDims ; i++) {
         _dim.push_back(OneDim(0, dims[i], dims[i]));
     }
+    delete[] dims;
+    dims = NULL;
     DataType dt = arrayType.getSuper();
     H5T_class_t dtc = dt.getClass();
     if ( dtc == H5T_INTEGER ) {
