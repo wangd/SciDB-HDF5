@@ -3,6 +3,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <H5Cpp.h>
+
 ////////////////////////////////////////////////////////////////////////
 // class Attr
 ////////////////////////////////////////////////////////////////////////
@@ -31,6 +32,27 @@ typedef std::vector<Attr> AttrVector;
 typedef boost::shared_ptr<AttrVector> AttrVectorPtr;
 
 ////////////////////////////////////////////////////////////////////////
+// class ScidbAttrLite - A class containing the values needed to
+// construct scidb::AttributeDesc, with none of the behavior and none
+// of the dependencies.
+////////////////////////////////////////////////////////////////////////
+class ScidbAttrLite {
+public:
+    ScidbAttrLite() {}
+    ScidbAttrLite(std::string const& name_, std::string const& typeId_);
+    uint32_t id; // Attribute # in array (index in attribute vector)
+    std::string name; // Attribute name
+    std::string typeId; // scidb::TypeId
+    // Avoid
+    // int16_t flags;
+    // uint16_t defaultCompressionMethod;
+    // std::set<std::string> aliases;
+    // int16_t reserve;
+};
+typedef std::vector<ScidbAttrLite> SalVector;
+typedef boost::shared_ptr<SalVector> SalVectorPtr;
+
+////////////////////////////////////////////////////////////////////////
 // class Dim
 ////////////////////////////////////////////////////////////////////////
 class Dim {
@@ -47,4 +69,47 @@ public:
 };
 typedef std::vector<Dim> DimVector;
 typedef boost::shared_ptr<DimVector> DimVectorPtr;
+
+////////////////////////////////////////////////////////////////////////
+// class ScidbDimLite - A class containing the values needed to
+// construct scidb::DimensionDesc, with none of the behavior and none
+// of the dependencies.
+////////////////////////////////////////////////////////////////////////
+class ScidbDimLite {
+public:
+    ScidbDimLite() {}
+    ScidbDimLite(std::string const& name, Dim const& dim);
+
+    std::string name; // Dimension name
+    int64_t min; // Dimension absolute minimum (units)
+    int64_t start; // Dimension start (units)
+    int64_t end; // Dimension end (units)
+    int64_t max; // Dimension absolute maximum (units)
+    int64_t chunkInterval; // Chunk size in this dimension
+    int64_t chunkOverlap; // Chunk overlap in this dimension
+    std::string typeId; // SciDB TypeId*
+    std::string arrayName; // Containing array's name
+
+    // Notes:
+    // * Avoid compiled dependency on SciDB's TypeId since it would
+    // make this code dependent on the rest of SciDB and untestable in
+    // isolation.
+};
+typedef std::vector<ScidbDimLite> SdlVector;
+typedef boost::shared_ptr<SdlVector> SdlVectorPtr;
+
+////////////////////////////////////////////////////////////////////////
+// Conversion functions
+////////////////////////////////////////////////////////////////////////
+struct toScidbLite {
+public:
+    ScidbDimLite operator()(Dim const& d);
+    ScidbAttrLite operator()(Attr const& a);
+};
+
+////////////////////////////////////////////////////////////////////////
+// Scidb constants
+////////////////////////////////////////////////////////////////////////
+extern char const* SCIDB_TID_INT64;
+
 #endif // LOADER_ARRAYCOMMON_HH

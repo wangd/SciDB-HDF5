@@ -1,11 +1,9 @@
 #include "arrayCommon.hh"
-////////////////////////////////////////////////////////////////////////
-// Dim
-////////////////////////////////////////////////////////////////////////
-const int64_t Dim::UNLIMITED = -1;
-const int64_t Dim::UNKNOWN = -2;
-const uint64_t Dim::MAX = 100000000000000ULL;
+#include <sstream>
 
+////////////////////////////////////////////////////////////////////////
+// Attr
+////////////////////////////////////////////////////////////////////////
 Attr Attr::makeInteger(H5::DataType const& dt) {
     H5::IntType obj(dt.getId());
     Attr a;
@@ -16,13 +14,35 @@ Attr Attr::makeInteger(H5::DataType const& dt) {
     assert((obj.getOrder() == H5T_ORDER_LE) ||
            (obj.getOrder() == H5T_ORDER_BE));
     a.sign = obj.getSign();
+    switch(a.tS) {
+    case sizeof(int16_t): a.tN = "int16"; break;
+    case sizeof(int32_t): a.tN = "int32"; break;
+    case sizeof(int64_t): a.tN = "int64"; break;
+    default: 
+        std::stringstream ss;
+        ss << "int" << (a.tS * 8);
+        a.tN = ss.str();
+        break;
+    }
+    if(a.sign == 0) { a.tN = "u" + a.tN; }
+    
     return a;
 }
+
 Attr Attr::makeFloat(H5::DataType const& dt) {
     H5::FloatType obj(dt.getId());
     Attr a;
     a.type = H5T_FLOAT;
     a.tS = obj.getSize();
+    switch(a.tS) {
+    case sizeof(float): a.tN = "float"; break;
+    case sizeof(double): a.tN = "double"; break;
+    default: 
+        std::stringstream ss;
+        ss << "float" << (a.tS * 8);
+        a.tN = ss.str();
+        break;
+    }
     return a;
 }
 Attr Attr::makeString(H5::DataType const& dt) {
@@ -36,3 +56,47 @@ Attr Attr::makeString(H5::DataType const& dt) {
     // FIXME: not sure we need the more complex handling from loader.cc
     return a;
 }
+////////////////////////////////////////////////////////////////////////
+// ScidbAttrLite
+////////////////////////////////////////////////////////////////////////
+ScidbAttrLite::ScidbAttrLite(std::string const& name_, 
+                             std::string const& typeId_) 
+    : name(name_), typeId(typeId_) {
+}
+
+//AttributeDesc(0, "value", attrSet.getType(), 0, 0);
+
+////////////////////////////////////////////////////////////////////////
+// Dim
+////////////////////////////////////////////////////////////////////////
+const int64_t Dim::UNLIMITED = -1;
+const int64_t Dim::UNKNOWN = -2;
+const uint64_t Dim::MAX = 100000000000000ULL;
+
+////////////////////////////////////////////////////////////////////////
+// ScidbDimLite
+////////////////////////////////////////////////////////////////////////
+ScidbDimLite::ScidbDimLite(std::string const& name_, Dim const& dim) 
+    : name(name), 
+      min(dim.d1),
+      start(dim.d1), end(dim.d2), 
+      max(dim.d2),
+      chunkInterval(end-start+1), chunkOverlap(0), 
+      typeId(SCIDB_TID_INT64), arrayName() {
+}
+
+////////////////////////////////////////////////////////////////////////
+// Conversion functions
+////////////////////////////////////////////////////////////////////////
+ScidbDimLite toScidbLite::operator()(Dim const& d) {
+    return ScidbDimLite("", d); // Don't have a name now.
+}
+ScidbAttrLite toScidbLite::operator()(Attr const& a) {
+    return ScidbAttrLite(a.attrName, a.tN);
+}
+
+////////////////////////////////////////////////////////////////////////
+// Scidb constants
+////////////////////////////////////////////////////////////////////////
+char const* SCIDB_TID_INT64 = "int64";
+
