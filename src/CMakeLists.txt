@@ -4,7 +4,7 @@ find_package(Hdf5  REQUIRED)
 find_package(Boost REQUIRED )
 find_package(Scidb REQUIRED)
 
-include_directories(${HDF5_INCLUDE_DIR} ${SCIDB_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
+include_directories(${HDF5_INCLUDE_DIR} ${SCIDB_INCLUDES} ${Boost_INCLUDE_DIRS})
 
 # file dumper
 add_executable(loader loader.cc printHdf.cc)
@@ -13,6 +13,26 @@ target_link_libraries(loader ${HDF5_LIBRARIES})
 # SciDb plugin
 set(plugin_src plugin.cc loadOperator.cc H5Array.cc arrayCommon.cc)
 add_library(loadhdf SHARED ${plugin_src})
+
+# Scidb lib for building test prog.
+find_path(SCIDB_BLD_DIR src/system/catalog/libcatalog_lib.a 
+  /u22/danielw/scidb-bld)
+
+set(scidbLibs 
+  ${SCIDB_BLD_DIR}/src/network/libnetwork_lib.a
+  ${SCIDB_BLD_DIR}/src/util/libutil_lib.a
+  ${SCIDB_BLD_DIR}/src/system/libsystem_lib.a
+  ${SCIDB_BLD_DIR}/src/query/libqproc_lib.a
+  ${SCIDB_BLD_DIR}/src//array/libarray_lib.a
+  ${SCIDB_BLD_DIR}/src/smgr/io/libio_lib.a
+  ${SCIDB_BLD_DIR}/src/system/catalog/libcatalog_lib.a
+
+)
+
+##  ${SCIDB_BLD_DIR}/src/smgr/io/lib_lib.a)
+
+find_library(LOG4CXXLIB log4cxx)
+find_library(BOOST_PROGOPTS boost_program_options)
 
 # test program
 add_executable(testHdf testHdf.cc H5Array.cc arrayCommon.cc)

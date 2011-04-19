@@ -93,9 +93,19 @@ private:
                       << " sign " << (*attrs)[i].sign << std::endl;
         }
         // add dimension
-        _readDimensions(_h5ds, hasExtraDim);
+        DimVectorPtr d = _readDimensions(_h5ds, hasExtraDim);
+        dims->insert(dims->end(), d->begin(), d->end());
+        for(unsigned i=0; i < dims->size(); ++i) {
+            std::cout << "dim with size " << (*dims)[i].d1
+                      << " - " << (*dims)[i].d2
+                      << " extent " << (*dims)[i].curNElems << std::endl;
+        }
 
+        // Update object
+        _dims = dims;
+        _attrs = attrs;
     }    
+
     DimVectorPtr _readArrayDims(H5::ArrayType& at) {
         DimVectorPtr dims(new DimVector());
         int rank = at.getArrayNDims();
@@ -108,6 +118,7 @@ private:
         delete[] extents;
         return dims;
     }
+
     AttrVectorPtr _readSimpleType(H5::DataType const& dt) {
         AttrVectorPtr attrs(new AttrVector());
         switch(dt.getClass()) {
@@ -125,6 +136,7 @@ private:
         }
         return attrs;
     }
+
     DimVectorPtr _readDimensions(H5::DataSet& ds, bool addExtra) {
         DimVectorPtr dims(new DimVector());
         if(addExtra) dims->push_back(Dim(0,Dim::UNLIMITED, Dim::UNKNOWN));
@@ -152,8 +164,12 @@ private:
         return dims;
     }
 
+
+
     H5::H5File _h5f;
     H5::DataSet _h5ds;
+    DimVectorPtr _dims;
+    AttrVectorPtr _attrs;
 };
 #if 0
 void _getDataSetMetadata(std::string const& dataSetName) {
@@ -206,6 +222,36 @@ H5Array::H5Array(std::string const& fPath, std::string const& path)
 
 }
 
+SdlVectorPtr convert(DimVectorPtr dp) {
+    SdlVectorPtr v(new SdlVector(dp->size()));
+    transform(dp->begin(), dp->end(), v->begin(), toScidbLite());
+    return v;
+}
+
+void buildArrayDesc() {
+    
+    //scidb::Dimensions sDims;
+    std::string versionName = "TestArray@1";
+    for(int i=0; i < 4; ++i) { // FIXME dim size.
+        //sDims[i] = scidb::DimensionDesc(dimName, start, curstart, curend, end, chunkinterval, type, somebool); 
+    }
+    
+#if 0
+            Dimensions const& oldDims = desc.getDimensions();
+            Dimensions newDims(oldDims.size());
+            for (size_t i = 0, n = oldDims.size(); i < n; i++) { 
+                DimensionDesc const& oldDim = oldDims[i];
+                newDims[i] = DimensionDesc(oldDim.getBaseName(), oldDim.getStartMin(), oldDim.getCurrStart(),
+                                           oldDim.getCurrEnd(), oldDim.getEndMax(), 
+                                           oldDim.getChunkInterval(), oldDim.getChunkOverlap(), 
+                                           oldDim.getType(), 
+                                           oldDim.getSourceArrayName() == arrayName ? versionName : oldDim.getSourceArrayName());
+            }                   
+            _schema = ArrayDesc(versionName, desc.getAttributes(), newDims);
+        }
+        _arrayID = SystemCatalog::getInstance()->addArray(_schema, psRoundRobin);
+#endif 
+}
 // boost::shared_ptr<scidb::ArrayDesc> H5Array::getArrayDesc() const {
 //     using scidb::ArrayDesc;
 //     boost::shared_ptr<ArrayDesc> desc(new ArrayDesc());

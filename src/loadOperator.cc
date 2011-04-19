@@ -9,6 +9,7 @@
 #include "array/DBArray.h"
 // pkg
 #include "H5Array.hh"
+#include "scidbConvert.hh"
 
 
 void loadHdf(std::string const& filePath, 
@@ -35,6 +36,7 @@ void loadHdf(std::string const& filePath,
     int rank = ha.getRank(); // FIXME
     scidb::Coordinates chunkPos(rank);   
     scidb::Coordinates coord(rank);
+    ArrayDescPtr ap = newArrayDesc(ha.getScidbAttrs(), ha.getScidbDims());
     for(int i=0; i < numChunks; ++i) {
         // FIXME: need to fix chunkPos and coord: what do they need to be?
         chunkPos = coord;
