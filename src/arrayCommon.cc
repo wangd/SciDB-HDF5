@@ -65,6 +65,9 @@ ScidbAttrLite::ScidbAttrLite(std::string const& name_,
 }
 
 //AttributeDesc(0, "value", attrSet.getType(), 0, 0);
+std::ostream& operator<<(std::ostream& os, ScidbAttrLite const& sal) {
+    return os << "Attr '" << sal.name << "' (" << sal.typeId << ")";
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Dim
@@ -77,19 +80,33 @@ const uint64_t Dim::MAX = 100000000000000ULL;
 // ScidbDimLite
 ////////////////////////////////////////////////////////////////////////
 ScidbDimLite::ScidbDimLite(std::string const& name_, Dim const& dim) 
-    : name(name), 
+    : name(name_), 
       min(dim.d1),
-      start(dim.d1), end(dim.d2), 
+      start(dim.d1), end(dim.d1 + dim.curNElems - 1), 
       max(dim.d2),
       chunkInterval(end-start+1), chunkOverlap(0), 
-      typeId(SCIDB_TID_INT64), arrayName() {
+      typeId(SCIDB_TID_INT64), arrayName("") {
+}
+
+std::ostream& operator<<(std::ostream& os, ScidbDimLite const& sdl) {
+    return os << "Dim '" << sdl.name << "' [" 
+              << sdl.start << "-" << sdl.end << " of " 
+              << sdl.min << "-" << sdl.max << " chunk=" 
+              << sdl.chunkInterval << " ovl=" << sdl.chunkOverlap
+              << "] (" << sdl.typeId << ")";
 }
 
 ////////////////////////////////////////////////////////////////////////
 // Conversion functions
 ////////////////////////////////////////////////////////////////////////
+std::string const unnamed("unnamed");
+std::string toStr(int i) {
+    std::stringstream s;
+    s << i;
+    return s.str();
+}
 ScidbDimLite toScidbLite::operator()(Dim const& d) {
-    return ScidbDimLite("", d); // Don't have a name now.
+    return ScidbDimLite(unnamed + toStr(count++), d); // Don't have a name now.
 }
 ScidbAttrLite toScidbLite::operator()(Attr const& a) {
     return ScidbAttrLite(a.attrName, a.tN);

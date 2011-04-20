@@ -1,6 +1,9 @@
 #define BOOST_TEST_MODULE testHdf
 #include "boost/test/included/unit_test.hpp"
 #include "H5Array.hh"
+#include "arrayCommon.hh"
+#include <algorithm>
+#include <iostream>
 
 struct HdfFixture {
     HdfFixture() {}
@@ -13,7 +16,18 @@ char path[] = "/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeaml
 BOOST_FIXTURE_TEST_SUITE(Hdf, HdfFixture)
 BOOST_AUTO_TEST_CASE(testH5Array) {
     H5Array h(fName, path);
-
 }
+
+BOOST_AUTO_TEST_CASE(checkDesc) {
+    H5Array h(fName, path);
+    SalVectorPtr sal = h.getScidbAttrs();
+    std::copy(sal->begin(), sal->end(), 
+              std::ostream_iterator<ScidbAttrLite>(std::cout, " "));
+    SdlVectorPtr sdl = h.getScidbDims();
+    std::copy(sdl->begin(), sdl->end(), 
+              std::ostream_iterator<ScidbDimLite>(std::cout, " "));
+    
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -26,6 +26,7 @@ public:
     
     class DataSet;
 private:
+    void _imposeChunking(SdlVectorPtr sdl) const;
     std::string const _filePath;
     std::string const _path;
     boost::shared_ptr<DataSet> _ds;

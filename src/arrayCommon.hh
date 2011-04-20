@@ -48,6 +48,8 @@ public:
     // uint16_t defaultCompressionMethod;
     // std::set<std::string> aliases;
     // int16_t reserve;
+    friend std::ostream& operator<<(std::ostream& os, 
+                                    ScidbAttrLite const& sal);
 };
 typedef std::vector<ScidbAttrLite> SalVector;
 typedef boost::shared_ptr<SalVector> SalVectorPtr;
@@ -63,6 +65,7 @@ public:
     int64_t d1; // start (typically 0)
     int64_t d2; // end or UNLIMITED
     int64_t curNElems; // current dimensionality (number of elements)
+    int chunkLength; // Chunk size in this dimension.
     static const uint64_t MAX;
     static const int64_t UNLIMITED;
     static const int64_t UNKNOWN;
@@ -79,7 +82,7 @@ class ScidbDimLite {
 public:
     ScidbDimLite() {}
     ScidbDimLite(std::string const& name, Dim const& dim);
-
+    
     std::string name; // Dimension name
     int64_t min; // Dimension absolute minimum (units)
     int64_t start; // Dimension start (units)
@@ -94,6 +97,7 @@ public:
     // * Avoid compiled dependency on SciDB's TypeId since it would
     // make this code dependent on the rest of SciDB and untestable in
     // isolation.
+    friend std::ostream& operator<<(std::ostream& os, ScidbDimLite const& sdl);
 };
 typedef std::vector<ScidbDimLite> SdlVector;
 typedef boost::shared_ptr<SdlVector> SdlVectorPtr;
@@ -103,8 +107,10 @@ typedef boost::shared_ptr<SdlVector> SdlVectorPtr;
 ////////////////////////////////////////////////////////////////////////
 struct toScidbLite {
 public:
+    toScidbLite() : count(0) {}
     ScidbDimLite operator()(Dim const& d);
     ScidbAttrLite operator()(Attr const& a);
+    int count;
 };
 
 ////////////////////////////////////////////////////////////////////////
