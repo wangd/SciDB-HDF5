@@ -34,13 +34,14 @@ void loadHdf(std::string const& filePath,
     boost::shared_ptr<scidb::ChunkIterator> ci; 
     int numChunks = ha.getSlabCount(); // FIXME
     int rank = ha.getRank(); // FIXME
-    scidb::Coordinates chunkPos(rank);   
+    scidb::Coordinates chunkPos(rank);
     scidb::Coordinates coord(rank);
     ArrayDescPtr ap = newArrayDesc(ha.getScidbAttrs(), ha.getScidbDims());
-    for(int i=0; i < numChunks; ++i) {
+    for(H5Array::SlabIter i = ha.begin();
+        i != ha.end(); ++i) {
         // FIXME: need to fix chunkPos and coord: what do they need to be?
         chunkPos = coord;
-        ci = ai->newChunk(chunkPos).getIterator(chunkMode);
+        ci = ai->newChunk(*i).getIterator(chunkMode);
     }
 
     // Fill results

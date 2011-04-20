@@ -16,6 +16,24 @@ namespace scidb {
 ////////////////////////////////////////////////////////////////////////
 class H5Array {
 public:
+    typedef std::vector<int64_t> Coordinates;
+    class SlabIter {
+    public:
+        SlabIter& operator++(); // Increment 
+        Coordinates const& operator*() const; // De-reference
+        bool operator==(SlabIter const& rhs) const; // Equality 
+        bool operator!=(SlabIter const& rhs) const; // In-equality 
+    private:
+        friend class H5Array;
+        SlabIter(H5Array const& ha, bool makeEnd=true);
+        
+        H5Array const& _ha;
+        Coordinates _coords;
+    }; 
+
+    friend class SlabIter;
+    class DataSet; // not part of interface.
+
     H5Array(std::string const& fPath, std::string const& path);
 
     boost::shared_ptr<scidb::ArrayDesc> getArrayDesc() const;
@@ -23,14 +41,30 @@ public:
     int getRank() const { return 3; } // FIXME 
     SalVectorPtr getScidbAttrs() const;
     SdlVectorPtr getScidbDims() const;
-    
-    class DataSet;
+    SlabIter begin() { return SlabIter(*this); }
+    SlabIter end() { return SlabIter(*this, false); }
+
 private:
     void _imposeChunking(SdlVectorPtr sdl) const;
     std::string const _filePath;
     std::string const _path;
     boost::shared_ptr<DataSet> _ds;
+    Coordinates _chunkIncr;
+    
 };
 
+inline H5Array::Coordinates const& H5Array::SlabIter::operator*() const { 
+    return _coords; 
+}
+
+inline bool H5Array::SlabIter::operator==(H5Array::SlabIter const& rhs) const {
+    for(unsigned i=0; i < _coords.size(); ++i)
+        if(_coords[i] != rhs._coords[i]) return false;
+    return true;
+}
+
+inline bool H5Array::SlabIter::operator!=(H5Array::SlabIter const& rhs) const {
+    return !((*this) == rhs);
+}
 
 #endif // LOADER_H5ARRAY_HH

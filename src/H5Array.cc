@@ -187,10 +187,42 @@ DimVectorPtr H5Array::DataSet::_readDimensions(H5::DataSet& ds,
 }    
 
 ////////////////////////////////////////////////////////////////////////
+// H5Array::SlabIter
+////////////////////////////////////////////////////////////////////////
+H5Array::SlabIter& H5Array::SlabIter::operator++() {
+    for(unsigned i=0; i < _coords.size(); ++i) {
+        _coords[i] += (_ha._chunkIncr)[i];
+    }
+    return *this;
+}
+
+H5Array::SlabIter::SlabIter(H5Array const& ha, bool makeEnd) 
+    : _ha(ha), _coords(ha._chunkIncr.size()) {
+
+    DimVectorPtr dp = ha._ds->getDims();
+    DimVector& d = *dp;
+    if(makeEnd) { 
+        for(unsigned i=0; i < _coords.size(); ++i) {
+            int64_t incr = _ha._chunkIncr[i];
+            int64_t nelem = d[i].curNElems;
+            if(incr > 0) _coords[i] = d[i].d1 + (nelem / incr);
+            else _coords[i] = 0;
+        }
+    } else {
+        for(unsigned i=0; i < _coords.size(); ++i) {
+            _coords[i] = d[i].d1;
+        }
+    }
+}
+   
+
+
+////////////////////////////////////////////////////////////////////////
 // H5Array
 ////////////////////////////////////////////////////////////////////////
 H5Array::H5Array(std::string const& fPath, std::string const& path) 
     : _filePath(fPath), _path(path), _ds(new DataSet(fPath, path)) {
+    // FIXME Need to setup chunkIncr 
 }
 
 SdlVectorPtr convert(DimVectorPtr dp) {
