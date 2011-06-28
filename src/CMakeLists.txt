@@ -6,6 +6,10 @@ find_package(Scidb REQUIRED)
 
 include_directories(${HDF5_INCLUDE_DIR} ${SCIDB_INCLUDES} ${Boost_INCLUDE_DIRS})
 
+# SciDB special flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SCIDB_CXX_FLAGS}")
+
+
 # file dumper
 add_executable(loader loader.cc printHdf.cc)
 target_link_libraries(loader ${HDF5_LIBRARIES})
