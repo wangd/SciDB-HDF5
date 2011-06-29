@@ -21,11 +21,14 @@ BOOST_AUTO_TEST_CASE(testH5Array) {
 BOOST_AUTO_TEST_CASE(checkDesc) {
     H5Array h(fName, path);
     SalVectorPtr sal = h.getScidbAttrs();
+    std::cout << "Checking descriptor for file:" << fName << " on path "
+              << path << std::endl;
     std::copy(sal->begin(), sal->end(), 
               std::ostream_iterator<ScidbAttrLite>(std::cout, " "));
     SdlVectorPtr sdl = h.getScidbDims();
     std::copy(sdl->begin(), sdl->end(), 
               std::ostream_iterator<ScidbDimLite>(std::cout, " "));
+    std::cout << "done." << std::endl;
     
 }
 

@@ -1,7 +1,14 @@
 #include "H5Array.hh" // myself
+//#pragma GCC diagnostic push
+//#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
 #include "array/Metadata.h" // scidb
+//#pragma GCC diagnostic pop
+
 #include "arrayCommon.hh"
+
+
 #include <iostream>
+#include <boost/make_shared.hpp>
 
 ////////////////////////////////////////////////////////////////////////
 // H5Array::DataSet
@@ -244,8 +251,9 @@ SalVectorPtr H5Array::getScidbAttrs() const {
     
 }
 
+
 boost::shared_ptr<scidb::ArrayDesc> H5Array::getArrayDesc() const {
-    return boost::shared_ptr<scidb::ArrayDesc>(); // FIXME
+    return ScidbIface::getArrayDesc(*this);
 }
 
 

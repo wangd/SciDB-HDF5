@@ -27,7 +27,11 @@ public:
         
         H5Array const& _ha;
         Coordinates _coords;
-    }; 
+    };
+    class ScidbIface {
+    public:
+        static boost::shared_ptr<scidb::ArrayDesc> getArrayDesc(H5Array const& h);
+    };
 
     friend class SlabIter;
     class DataSet; // not part of interface.
