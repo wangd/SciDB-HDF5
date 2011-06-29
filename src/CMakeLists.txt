@@ -8,6 +8,7 @@ include_directories(${HDF5_INCLUDE_DIR} ${SCIDB_INCLUDES} ${Boost_INCLUDE_DIRS})
 
 # SciDB special flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SCIDB_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 
 # file dumper
@@ -17,6 +18,7 @@ target_link_libraries(loader ${HDF5_LIBRARIES})
 # SciDb plugin
 set(plugin_src plugin.cc loadOperator.cc H5Array.cc arrayCommon.cc)
 add_library(loadhdf SHARED ${plugin_src})
+target_link_libraries(loadhdf ${HDF5_LIBRARIES})
 
 # Scidb lib for building test prog.
 find_path(SCIDB_BLD_DIR src/system/catalog/libcatalog_lib.a 
