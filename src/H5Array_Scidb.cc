@@ -29,12 +29,16 @@ public:
 
 void convertInto(scidb::Attributes& sAtts, SalVector const& atts) {
     sAtts.clear();
-    std::transform(atts.begin(), atts.end(), sAtts.begin(), attConvert());
+    sAtts.reserve(atts.size());
+    std::transform(atts.begin(), atts.end(), 
+                   std::back_inserter(sAtts), attConvert());
 }
 
 void convertInto(scidb::Dimensions& sDims, SdlVector const& dims) {
     sDims.clear();
-    std::transform(dims.begin(), dims.end(), sDims.begin(), dimConvert());
+    sDims.reserve(dims.size());
+    std::transform(dims.begin(), dims.end(), 
+                   std::back_inserter(sDims), dimConvert());
 }
 
 boost::shared_ptr<scidb::ArrayDesc> 
