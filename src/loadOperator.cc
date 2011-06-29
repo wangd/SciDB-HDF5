@@ -19,14 +19,22 @@ void loadHdf(std::string const& filePath,
     // Do something good.
     H5Array ha(filePath, hdfPath);
 
+    std::cout << "Retrieving descriptor for " << filePath << " --> " 
+              << hdfPath << std::endl;
     boost::shared_ptr<scidb::ArrayDesc> dptr(ha.getArrayDesc());
     dptr->setName(arrayName);
+    std::cout << "Set array name. Getting catalog instance." << std::endl;
     scidb::SystemCatalog& catalog = *scidb::SystemCatalog::getInstance();
+
+    if(catalog.containsArray(arrayName)) { // delete if existing.
+        catalog.deleteArray(arrayName);
+    }
 
     // Get array id; hardcode partitioning scheme for now.
     scidb::ArrayID aid = catalog.addArray(*dptr, scidb::psLocalNode); 
     scidb::DBArray array(aid);
-
+    std::cout << "Added array to catalog and contructed dbarray." << std::endl;
+    
     // Only handle single-attribute right now.
     int chunkMode = 0; // chunk mode (dense/sparse)
     chunkMode |=  scidb::ChunkIterator::NO_EMPTY_CHECK;
@@ -36,7 +44,7 @@ void loadHdf(std::string const& filePath,
     int rank = ha.getRank(); // FIXME
     scidb::Coordinates chunkPos(rank);
     scidb::Coordinates coord(rank);
-    ArrayDescPtr ap = newArrayDesc(ha.getScidbAttrs(), ha.getScidbDims());
+    //ArrayDescPtr ap = newArrayDesc(ha.getScidbAttrs(), ha.getScidbDims());
     for(H5Array::SlabIter i = ha.begin();
         i != ha.end(); ++i) {
         // FIXME: need to fix chunkPos and coord: what do they need to be?
