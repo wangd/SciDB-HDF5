@@ -22,6 +22,7 @@ namespace {
 ////////////////////////////////////////////////////////////////////////
 // Boilerplate
 ////////////////////////////////////////////////////////////////////////
+#if 0
 EXPORTED_FUNCTION void GetPluginVersion(uint32_t& major, uint32_t& minor, 
                                         uint32_t& patch, uint32_t& build)
 {
@@ -31,7 +32,7 @@ EXPORTED_FUNCTION void GetPluginVersion(uint32_t& major, uint32_t& minor,
     patch = 0;
     build = 0;
 }
-
+#endif
 // FIXME: This could be a pipelined loader that doesn't just load into an array...
 
 // Logical
