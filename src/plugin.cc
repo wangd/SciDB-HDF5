@@ -89,9 +89,11 @@ public:
     boost::shared_ptr<scidb::Array> execute(ArrayVector& inputArrays, 
                                             boost::shared_ptr<scidb::Query> ) {
         assert(inputArrays.size() == 0);
-        loadHdf(extractParam(*_parameters[0]), 
-                extractParam(*_parameters[1]), 
-                extractParam(*_parameters[2]));
+        loadHdf(
+                extractParam(*_parameters[1]), // path to h5 file
+                extractParam(*_parameters[2]), // path to array
+                extractParam(*_parameters[0]) // array name
+                );
         // Not sure what to return as an array right now.
         return ArrayPtr();
     }

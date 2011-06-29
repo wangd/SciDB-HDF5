@@ -13,8 +13,12 @@ class H5Array::DataSet {
 public:
     DataSet(std::string const& f, std::string const& dataSetName) 
         : _h5f(f, H5F_ACC_RDONLY), _dimHint(0) {
-        _h5ds = _h5f.openDataSet(dataSetName);
-        _readType();
+        try {
+            _h5ds = _h5f.openDataSet(dataSetName);
+            _readType();
+        } catch(H5::Exception) {
+            std::cerr << "Unknown HDF5 exception." << std::endl;
+        }
     }
     
     DimVectorPtr getDims() const { return _dims; }
@@ -239,6 +243,11 @@ SalVectorPtr H5Array::getScidbAttrs() const {
     return v;
     
 }
+
+boost::shared_ptr<scidb::ArrayDesc> H5Array::getArrayDesc() const {
+    return boost::shared_ptr<scidb::ArrayDesc>(); // FIXME
+}
+
 
 SdlVectorPtr H5Array::getScidbDims() const {
     assert(_ds);

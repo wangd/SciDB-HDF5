@@ -43,7 +43,6 @@ void loadHdf(std::string const& filePath,
         chunkPos = coord;
         ci = ai->newChunk(*i).getIterator(chunkMode);
     }
-
     // Fill results
     //res.setString("SomeArray"); // Fill in result: name of new array
 }
