@@ -32,5 +32,15 @@ BOOST_AUTO_TEST_CASE(checkDesc) {
     
 }
 
+BOOST_AUTO_TEST_CASE(checkSlabIter) {
+    H5Array h(fName, path);
+    std::cout << "Iterating... " << fName << " --> " << path << std::endl;
+    std::cout << "begin: " << h.begin() << std::endl;
+    std::cout << "end: " << h.end() << std::endl;
+    for(H5Array::SlabIter i = h.begin(); i != h.end(); ++i) {
+        std::cout << i << std::endl;
+    }
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
