@@ -225,7 +225,21 @@ H5Array::SlabIter::SlabIter(H5Array const& ha, bool makeEnd)
         }
     }
 }
-   
+
+H5Array::Size H5Array::SlabIter::byteSize() const {
+    return 32; // FIXME
+}
+
+char* H5Array::SlabIter::data()  {
+    return 0; // FIXME
+}
+
+std::ostream& operator<<(std::ostream& os, H5Array::SlabIter const& i) {
+    os << "SlabIter @ ";
+    std::copy(i._coords.begin(), i._coords.end(), 
+              std::ostream_iterator<int64_t>(os, ","));
+    return os;
+}
 
 
 ////////////////////////////////////////////////////////////////////////

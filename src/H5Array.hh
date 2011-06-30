@@ -15,15 +15,21 @@ namespace scidb {
 class H5Array {
 public:
     typedef std::vector<int64_t> Coordinates;
+    typedef int64_t Size;
+
     class SlabIter {
     public:
         SlabIter& operator++(); // Increment 
         Coordinates const& operator*() const; // De-reference
         bool operator==(SlabIter const& rhs) const; // Equality 
         bool operator!=(SlabIter const& rhs) const; // In-equality 
+        Size byteSize() const;
+        char* data();
+        friend std::ostream& operator<<(std::ostream& os, SlabIter const& i);
+
     private:
         friend class H5Array;
-        SlabIter(H5Array const& ha, bool makeEnd=true);
+        SlabIter(H5Array const& ha, bool makeEnd=false);
         
         H5Array const& _ha;
         Coordinates _coords;
@@ -44,7 +50,7 @@ public:
     SalVectorPtr getScidbAttrs() const;
     SdlVectorPtr getScidbDims() const;
     SlabIter begin() { return SlabIter(*this); }
-    SlabIter end() { return SlabIter(*this, false); }
+    SlabIter end() { return SlabIter(*this, true); }
 
 private:
     void _imposeChunking(SdlVectorPtr sdl) const;
