@@ -35,21 +35,27 @@ void loadHdf(std::string const& filePath,
     scidb::DBArray array(aid);
     std::cout << "Added array to catalog and contructed dbarray." << std::endl;
     
+
+
     // Only handle single-attribute right now.
     int chunkMode = 0; // chunk mode (dense/sparse)
     chunkMode |=  scidb::ChunkIterator::NO_EMPTY_CHECK;
     boost::shared_ptr<scidb::ArrayIterator> ai = array.getIterator(0);
-    boost::shared_ptr<scidb::ChunkIterator> ci; 
-    int numChunks = ha.getSlabCount(); // FIXME
-    int rank = ha.getRank(); // FIXME
-    scidb::Coordinates chunkPos(rank);
-    scidb::Coordinates coord(rank);
     //ArrayDescPtr ap = newArrayDesc(ha.getScidbAttrs(), ha.getScidbDims());
+    std::cout << "Iterating... " << std::endl;
+    std::cout << "begin: " << ha.begin() << std::endl;
+    std::cout << "end: " << ha.end() << std::endl;
     for(H5Array::SlabIter i = ha.begin();
         i != ha.end(); ++i) {
         // FIXME: need to fix chunkPos and coord: what do they need to be?
-        chunkPos = coord;
-        ci = ai->newChunk(*i).getIterator(chunkMode);
+        std::cout << i << std::endl;
+        //ci = ai->newChunk(*i).getIterator(chunkMode);
+        scidb::Chunk& outChunk = ai->newChunk(*i);
+        outChunk.allocate(i.byteSize());
+        outChunk.setSparse(false); // Never sparse
+        memcpy(outChunk.getData(), i.data(), i.byteSize());
+        outChunk.setCount(0);
+        outChunk.write();
     }
     // Fill results
     //res.setString("SomeArray"); // Fill in result: name of new array
