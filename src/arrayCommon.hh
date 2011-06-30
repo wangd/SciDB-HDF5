@@ -60,7 +60,7 @@ typedef boost::shared_ptr<SalVector> SalVectorPtr;
 class Dim {
 public:
     Dim(int64_t _d1, int64_t _d2, int64_t _n) 
-        : d1(_d1), d2(_d2), curNElems(_n) {}
+        : d1(_d1), d2(_d2), curNElems(_n), chunkLength(_n) {}
         
     int64_t d1; // start (typically 0)
     int64_t d2; // end or UNLIMITED

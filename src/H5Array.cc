@@ -5,10 +5,58 @@
 //#pragma GCC diagnostic pop
 
 #include "arrayCommon.hh"
-
-
 #include <iostream>
 #include <boost/make_shared.hpp>
+
+namespace {
+
+
+    ////////////////////////////////////////////////////////////////////
+    // Helpers for H5Array::DataSet
+    ////////////////////////////////////////////////////////////////////
+    void adjustChunking(DimVector& dv) {
+        // Choose to chunk full dimension extent slabs up to
+        // least-rapidly-varying dimension (or until a threshold is
+        // reached.
+        // (Can we read chunking decisions from HDF? -Daniel)
+        typedef DimVector::iterator Iter;
+        Iter end = dv.end();
+        int64_t accumulated = 0;
+        int64_t threshold = 1024*1024; // Kind of arbitrary....
+        for(Iter i = dv.begin(); i != end; ++i) {
+            int64_t thisDim = i->curNElems;
+            int64_t next = accumulated * thisDim;
+            if(next == 0) next = thisDim;
+            if(next > threshold) {
+                // FIXME: need to handle big first dimensions.
+                assert(accumulated > 1); 
+                i->chunkLength = 1;
+            } else {
+                i->chunkLength = thisDim;
+                accumulated = next;
+            }
+        }
+#if 0
+        std::cout << "ChunkSizes: ";
+        for(Iter i = dv.begin(); i != end; ++i) {
+            std::cout << i->chunkLength << ",";
+        }
+        std::cout << std::endl;
+#endif
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    // Helpers for H5Array 
+    ////////////////////////////////////////////////////////////////////
+    class extractIncr {
+    public:
+        typedef scidb::Coordinates::value_type RetVal;
+        inline RetVal operator()(DimVector::value_type const& d) {
+            return d.chunkLength;  // This isn't quite right.
+        }
+    };
+    
+}
 
 ////////////////////////////////////////////////////////////////////////
 // H5Array::DataSet
@@ -23,6 +71,7 @@ public:
         try {
             _h5ds = _h5f.openDataSet(dataSetName);
             _readType();
+            adjustChunking(*_dims);
         } catch(H5::Exception) {
             std::cerr << "Unknown HDF5 exception." << std::endl;
         }
@@ -201,8 +250,23 @@ DimVectorPtr H5Array::DataSet::_readDimensions(H5::DataSet& ds,
 // H5Array::SlabIter
 ////////////////////////////////////////////////////////////////////////
 H5Array::SlabIter& H5Array::SlabIter::operator++() {
+    DimVectorPtr dp = _ha._ds->getDims();
+    DimVector& dv = *dp;
+    bool end = true;
     for(unsigned i=0; i < _coords.size(); ++i) {
-        _coords[i] += (_ha._chunkIncr)[i];
+        Coordinates::value_type length = _coords[i];
+        length += dv[i].chunkLength;
+        if(length >= (dv[i].d1 + dv[i].curNElems)) {
+            _coords[i] = dv[i].d1; // d1 = 0 usually
+        } else {
+            _coords[i] = length;
+            end = false;
+            break;
+        }
+    }
+    if(end) {
+        unsigned last = _coords.size() - 1;
+        _coords[last] = dv[last].d1 + dv[last].curNElems;
     }
     return *this;
 }
@@ -212,22 +276,23 @@ H5Array::SlabIter::SlabIter(H5Array const& ha, bool makeEnd)
 
     DimVectorPtr dp = ha._ds->getDims();
     DimVector& d = *dp;
-    if(makeEnd) { 
-        for(unsigned i=0; i < _coords.size(); ++i) {
-            int64_t incr = _ha._chunkIncr[i];
-            int64_t nelem = d[i].curNElems;
-            if(incr > 0) _coords[i] = d[i].d1 + (nelem / incr);
-            else _coords[i] = 0;
-        }
-    } else {
-        for(unsigned i=0; i < _coords.size(); ++i) {
-            _coords[i] = d[i].d1;
-        }
+    for(unsigned i=0; i < _coords.size(); ++i) {
+        _coords[i] = d[i].d1;
     }
+    if(makeEnd) { 
+        unsigned last = _coords.size() - 1;
+        _coords[last] += d[last].curNElems;
+    } 
 }
 
 H5Array::Size H5Array::SlabIter::byteSize() const {
-    return 32; // FIXME
+    DimVectorPtr dp = _ha._ds->getDims();
+    DimVector& d = *dp;
+    Size s = 1;
+    for(unsigned i=0; i < d.size(); ++i) {
+        s *= d[i].chunkLength;
+    }
+    return s;
 }
 
 char* H5Array::SlabIter::data()  {
@@ -248,6 +313,12 @@ std::ostream& operator<<(std::ostream& os, H5Array::SlabIter const& i) {
 H5Array::H5Array(std::string const& fPath, std::string const& path) 
     : _filePath(fPath), _path(path), _ds(new DataSet(fPath, path)) {
     // FIXME Need to setup chunkIncr 
+    // _chunkIncr is vector for incrementing slabs.
+    // Pull it from the dims.
+    DimVectorPtr dims = _ds->getDims();
+    _chunkIncr.resize(dims->size());
+    std::transform(dims->begin(), dims->end(), _chunkIncr.begin(), 
+                   extractIncr());
 }
 
 SdlVectorPtr convert(DimVectorPtr dp) {

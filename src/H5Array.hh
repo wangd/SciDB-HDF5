@@ -12,6 +12,22 @@ namespace scidb {
 ////////////////////////////////////////////////////////////////////////
 // class H5Array
 ////////////////////////////////////////////////////////////////////////
+// Notes on H5Array:
+// Example A:  1024x1024x77777.
+// Chunk length: size of the chunk in a dimension.  e.g., 256x256x1 or
+// 1024x1024x1 for Example A.
+// 
+// Incrementing for iterating through chunks: Generally, advance first
+// dimension by chunk size in that dimension until rollover/carry to
+// next dimension. 
+// e.g. for length 256x256x1 -> (0,0,0), (256,0,0), (512,0,0),
+// (768,0,0), (0,256,0), (256,256,0),... 
+// for length 512x1024x1 -> (0,0,0), (512,0,0), (0,0,1), (512,0,1), ...
+//
+// An iterator should maintain a position in real space, and increment
+// by chunk sizes.
+//
+////////////////////////////////////////////////////////////////////////
 class H5Array {
 public:
     typedef std::vector<int64_t> Coordinates;
