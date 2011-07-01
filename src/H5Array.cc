@@ -80,6 +80,7 @@ public:
     DimVectorPtr getDims() const { return _dims; }
     int getDimHint() const { return _dimHint; }
     AttrVectorPtr getAttrs() const { return _attrs; }
+    Size getTypeSize() const;
     H5::DataSpace getSpace() { return _h5ds.getSpace(); }
 
     // FIXME ugly interface now.
@@ -103,6 +104,13 @@ private:
     int _dimHint; // If the type has dimensions, then the hint is
     // the number of the first dimension not flattened.
 };
+
+H5Array::Size H5Array::DataSet::getTypeSize() const {
+    // FIXME: Need to generalize for non-array types.
+    std::cout << "Dataset type size is " 
+              << _h5ds.getArrayType().getSize() << std::endl;
+    return _h5ds.getArrayType().getSize();
+}
 
 void H5Array::DataSet::readInto(void* buffer, 
                                 H5::DataSpace& mem, H5::DataSpace& file) {
@@ -303,9 +311,16 @@ H5Array::Size H5Array::SlabIter::byteSize() const {
     DimVectorPtr dp = _ha._ds->getDims();
     DimVector& d = *dp;
     Size s = 1;
+    // Count elements
     for(unsigned i=0; i < d.size(); ++i) {
         s *= d[i].chunkLength;
     }
+    // Apply datatype size.
+    // FIXME: only applies to first attribute.
+    AttrVectorPtr ap = _ha._ds->getAttrs();
+    AttrVector& a = *ap;
+    Size typeSize = a[0].tS;
+    s *= typeSize;
     return s;
 }
 
@@ -330,6 +345,7 @@ void* H5Array::SlabIter::readInto(void* buffer) {
     hsize_t dims[1] = { d[d.size()-1].curNElems };
     start[0] = start[2];
     count[0] = 1;
+    hsize_t start0[1] = {0};
     // End hardcode
 
     // Setup spaces
@@ -339,10 +355,9 @@ void* H5Array::SlabIter::readInto(void* buffer) {
     hsize_t bufferSize = byteSize();
 
     fileSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start.get());
-    memSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start.get());
+    memSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start0);
     assert(memSpace.selectValid());
     assert(fileSpace.selectValid());
-    std::cout << "Selected " << memSpace.getSelectNpoints() << std::endl;
     assert(memSpace.getSelectNpoints() == fileSpace.getSelectNpoints());
     memset(buffer, 0, bufferSize);
     _ha._ds->readInto(buffer, memSpace, fileSpace);
