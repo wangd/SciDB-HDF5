@@ -248,8 +248,10 @@ DimVectorPtr H5Array::DataSet::_readDimensions(H5::DataSet& ds,
     int r = dSpace.getSimpleExtentDims(extents, limits);
     assert(r == rank);
     for(int i=0; i<rank; ++i) {
+        // Not sure how to translate UNLIMITED into SciDB, 
+        // so clamp at MAX
         hsize_t limit = (limits[i] <= Dim::MAX) ?
-            limits[i] : Dim::UNLIMITED;
+            limits[i] : Dim::MAX;
         dims->push_back(Dim(0, limit, extents[i]));
     }
     delete[] extents;
@@ -337,8 +339,10 @@ void* H5Array::SlabIter::readInto(void* buffer) {
     hsize_t bufferSize = byteSize();
 
     fileSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start.get());
+    memSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start.get());
     assert(memSpace.selectValid());
     assert(fileSpace.selectValid());
+    std::cout << "Selected " << memSpace.getSelectNpoints() << std::endl;
     assert(memSpace.getSelectNpoints() == fileSpace.getSelectNpoints());
     memset(buffer, 0, bufferSize);
     _ha._ds->readInto(buffer, memSpace, fileSpace);

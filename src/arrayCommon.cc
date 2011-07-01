@@ -74,7 +74,7 @@ std::ostream& operator<<(std::ostream& os, ScidbAttrLite const& sal) {
 ////////////////////////////////////////////////////////////////////////
 const int64_t Dim::UNLIMITED = -1;
 const int64_t Dim::UNKNOWN = -2;
-const uint64_t Dim::MAX = 100000000000000ULL;
+const uint64_t Dim::MAX = (1ULL << 63)-1;
 
 ////////////////////////////////////////////////////////////////////////
 // ScidbDimLite
