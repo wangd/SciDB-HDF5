@@ -37,8 +37,20 @@ BOOST_AUTO_TEST_CASE(checkSlabIter) {
     std::cout << "Iterating... " << fName << " --> " << path << std::endl;
     std::cout << "begin: " << h.begin() << std::endl;
     std::cout << "end: " << h.end() << std::endl;
+    int count =0;
+    boost::shared_array<char> buffer;
     for(H5Array::SlabIter i = h.begin(); i != h.end(); ++i) {
-        std::cout << i << std::endl;
+        ++count;
+        if(count < 80) std::cout << i << std::endl;
+        else if (count == 80) std::cout << "Suppressing..." << std:: endl;
+
+        
+        if(!buffer) {
+            uint64_t bufSize = i.byteSize();
+            std::cout << "Allocating buffer of size " << bufSize << std::endl;
+            buffer.reset(new char[bufSize]);
+        }
+        i.readInto(buffer.get());
     }
 }
 
