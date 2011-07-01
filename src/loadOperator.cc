@@ -53,7 +53,7 @@ void loadHdf(std::string const& filePath,
         scidb::Chunk& outChunk = ai->newChunk(*i);
         outChunk.allocate(i.byteSize());
         outChunk.setSparse(false); // Never sparse
-        memcpy(outChunk.getData(), i.data(), i.byteSize());
+        i.readInto(outChunk.getData());
         outChunk.setCount(0);
         outChunk.write();
     }
