@@ -41,6 +41,7 @@ public:
         bool operator!=(SlabIter const& rhs) const; // In-equality 
         Size byteSize() const;
         char* data();
+        void* readInto(void* buffer);
         friend std::ostream& operator<<(std::ostream& os, SlabIter const& i);
 
     private:

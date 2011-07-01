@@ -7,7 +7,7 @@
 #include "arrayCommon.hh"
 #include <iostream>
 #include <boost/make_shared.hpp>
-
+#include <boost/shared_array.hpp>
 namespace {
 
 
@@ -80,6 +80,11 @@ public:
     DimVectorPtr getDims() const { return _dims; }
     int getDimHint() const { return _dimHint; }
     AttrVectorPtr getAttrs() const { return _attrs; }
+    H5::DataSpace getSpace() { return _h5ds.getSpace(); }
+
+    // FIXME ugly interface now.
+    void readInto(void* buffer, H5::DataSpace& mem, H5::DataSpace& file);
+
 private:
     bool _unwrapVlenComp(H5::CompType& ct, H5T_class_t& tc);
     void _complain(char const* s) {
@@ -98,6 +103,12 @@ private:
     int _dimHint; // If the type has dimensions, then the hint is
     // the number of the first dimension not flattened.
 };
+
+void H5Array::DataSet::readInto(void* buffer, 
+                                H5::DataSpace& mem, H5::DataSpace& file) {
+    _h5ds.read(buffer, _h5ds.getDataType(), mem, file);
+}
+
 
 /// Test and unwrap a "compound { vlen { compound {???} } }"
 /// @param ct : H5::CompType that is modified by unwrapping
@@ -246,6 +257,7 @@ DimVectorPtr H5Array::DataSet::_readDimensions(H5::DataSet& ds,
     return dims;
 }    
 
+
 ////////////////////////////////////////////////////////////////////////
 // H5Array::SlabIter
 ////////////////////////////////////////////////////////////////////////
@@ -296,7 +308,41 @@ H5Array::Size H5Array::SlabIter::byteSize() const {
 }
 
 char* H5Array::SlabIter::data()  {
+    
     return 0; // FIXME
+}
+
+void* H5Array::SlabIter::readInto(void* buffer) {
+    DimVectorPtr dp = _ha._ds->getDims();
+    DimVector& d = *dp;
+    int rank = _coords.size();
+    // Setup dimensionalities
+    boost::shared_array<hsize_t> start(new hsize_t[rank]);
+    boost::shared_array<hsize_t> count(new hsize_t[rank]);
+    std::copy(_coords.begin(), _coords.end(), start.get());
+    std::transform(d.begin(), d.end(), count.get(), extractIncr());
+
+    // Hardcode for now. Unsure how to generally map. 
+    // This works for an array=1D of 2D, where Scidb=3D.
+    rank = 1; 
+    hsize_t dims[1] = { d[d.size()-1].curNElems };
+    start[0] = start[2];
+    count[0] = 1;
+    // End hardcode
+
+    // Setup spaces
+    assert(_ha._ds.get());
+    H5::DataSpace fileSpace = _ha._ds->getSpace();
+    H5::DataSpace memSpace(rank, dims);
+    hsize_t bufferSize = byteSize();
+
+    fileSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start.get());
+    assert(memSpace.selectValid());
+    assert(fileSpace.selectValid());
+    assert(memSpace.getSelectNpoints() == fileSpace.getSelectNpoints());
+    memset(buffer, 0, bufferSize);
+    _ha._ds->readInto(buffer, memSpace, fileSpace);
+    return buffer;
 }
 
 std::ostream& operator<<(std::ostream& os, H5Array::SlabIter const& i) {
@@ -348,7 +394,6 @@ SdlVectorPtr H5Array::getScidbDims() const {
     assert(dims);
     SdlVectorPtr v(new SdlVector(dims->size()));
     transform(dims->begin(), dims->end(), v->begin(), toScidbLite());
-    _imposeChunking(v);
     return v;
 }
 
@@ -368,9 +413,6 @@ void H5Array::_imposeChunking(SdlVectorPtr dims) const {
         else accSize = d.chunkInterval;
         // Use thin chunks for dims, once slabs are "big enough"
         if(accSize > minFrag) d.chunkInterval = 1; 
-            
-
-
     }
 }
 
