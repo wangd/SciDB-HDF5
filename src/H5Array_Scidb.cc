@@ -39,6 +39,8 @@ void convertInto(scidb::Dimensions& sDims, SdlVector const& dims) {
     sDims.reserve(dims.size());
     std::transform(dims.begin(), dims.end(), 
                    std::back_inserter(sDims), dimConvert());
+    // std::copy(dims.begin(), dims.end(), 
+    //           std::ostream_iterator<ScidbDimLite>(std::cout, "\n"));
 }
 
 boost::shared_ptr<scidb::ArrayDesc> 

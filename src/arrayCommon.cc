@@ -84,7 +84,8 @@ ScidbDimLite::ScidbDimLite(std::string const& name_, Dim const& dim)
       min(dim.d1),
       start(dim.d1), end(dim.d1 + dim.curNElems - 1), 
       max(dim.d2),
-      chunkInterval(end-start+1), chunkOverlap(0), 
+      chunkInterval(dim.chunkLength), //chunkInterval(end-start+1), 
+      chunkOverlap(0), 
       typeId(SCIDB_TID_INT64), arrayName("") {
 }
 

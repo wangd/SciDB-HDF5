@@ -18,7 +18,9 @@ namespace {
         // Choose to chunk full dimension extent slabs up to
         // least-rapidly-varying dimension (or until a threshold is
         // reached.
-        // (Can we read chunking decisions from HDF? -Daniel)
+        // (Can we read chunking decisions from HDF? Actually, we need
+        // to, for 1D of 2D = 3D case. -Daniel
+        //
         typedef DimVector::iterator Iter;
         Iter end = dv.end();
         int64_t accumulated = 0;
