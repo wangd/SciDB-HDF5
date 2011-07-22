@@ -11,7 +11,8 @@ struct HdfFixture {
 };
 char fName[] = "sxrcom10-r0232.h5";
 char path[] = "/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1/image";
-
+char dpath[] = "/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1/data";
+char tpath[] = "/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1/time";
 
 BOOST_FIXTURE_TEST_SUITE(Hdf, HdfFixture)
 BOOST_AUTO_TEST_CASE(testH5Array) {
@@ -41,8 +42,14 @@ BOOST_AUTO_TEST_CASE(checkSlabIter) {
     boost::shared_array<char> buffer;
     for(H5Array::SlabIter i = h.begin(); i != h.end(); ++i) {
         ++count;
-        if(count < 80) std::cout << i << std::endl;
-        else if (count == 80) std::cout << "Suppressing..." << std:: endl;
+        if(count < 80) {
+            std::cout << i << std::endl;
+        } else if(count == 80) {
+            std::cout << "Suppressing..." << std:: endl;
+        } else if(count > 100) {
+            std::cout << "Stopping after 100 slabs." << std::endl;
+            break;
+        }
 
         
         if(!buffer) {
@@ -53,6 +60,34 @@ BOOST_AUTO_TEST_CASE(checkSlabIter) {
         i.readInto(buffer.get());
     }
 }
+
+BOOST_AUTO_TEST_CASE(Compound) {
+    H5Array h(fName, dpath);
+    std::cout << "Iterating... " << fName << " --> " << path << std::endl;
+    std::cout << "begin: " << h.begin() << std::endl;
+    std::cout << "end: " << h.end() << std::endl;
+    int count =0;
+    boost::shared_array<char> buffer;
+    for(H5Array::SlabIter i = h.begin(); i != h.end(); ++i) {
+        ++count;
+        if(count < 80) {
+            std::cout << i << std::endl;
+        } else if(count == 80) {
+            std::cout << "Suppressing..." << std:: endl;
+        } else if(count > 100) {
+            std::cout << "Stopping after 100 slabs." << std::endl;
+            break;
+        }
+        
+        if(!buffer) {
+            uint64_t bufSize = i.byteSize();
+            std::cout << "Allocating buffer of size " << bufSize << std::endl;
+            buffer.reset(new char[bufSize]);
+        }
+        i.readInto(buffer.get());
+    }
+}
+
 
 
 BOOST_AUTO_TEST_SUITE_END()
