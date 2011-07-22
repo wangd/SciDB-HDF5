@@ -30,14 +30,33 @@ Suppose you've checked out the source into /home/daniel/scidbhdf
 The "loader" binary will be created within the "src" subdirectory.  It is 
 hardcoded to use a particular HDF5 file and to read a particular tree within.
 
-The "libloadhdf.so" is a shared library designed to be a scidb plugin.  It
-is not yet functional.
+The "libloadhdf.so" is a shared library designed to be a scidb plugin.
+You can install it by copying it from the src/ directory to your SciDB
+installation's plugins directory (ROOT/lib/scidb/plugins)
+
+Status
+------
+The SciDB-HDF5 is alpha-level code. It functions under some conditions
+but needs substantial development to handle more general usage.
+
 
 Trying out the loader:
 ----------------------
-The following should work some day in the future.
+## Load the plugin
 iquery -aq "load_library('loadhdf');"
-iquery -aq "loadhdf('image', '/u24/ldrd/sxrcom10-r0232.h5', '/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1/image');"
+
+## Load an array
+iquery -aq "loadhdf('image', '/u24/ldrd/sxrcom10-r0232.h5',
+'/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1/image');"
+
+## Some SciDB snippets to inspect the loaded array
+iquery -aq "show(image);"
+
+## Count it
+iquery -aq "count(image);"
+
+## pixel standard deviations for the first 3 images in the series
+iquery -aq "stdev(subarray(image,0,0,0,1023,1023,2),int1,unnamed2);"
 
 
 
@@ -56,6 +75,9 @@ Notes:
 2. You might find the "make VERBOSE=1" command useful when troubleshooting
    build problems.
 
+
+All files are distributed under the Apache License 2.0 (described
+below) unless otherwise noted.
 
 Copyright Notice:
 -----------------
