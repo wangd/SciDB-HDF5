@@ -96,6 +96,7 @@ private:
     void _readType();
     DimVectorPtr _readArrayDims(H5::ArrayType& at);
     AttrVectorPtr _readSimpleType(H5::DataType const& dt);
+    AttrVectorPtr _readCompType(H5::CompType const& ct);
     DimVectorPtr _readDimensions(H5::DataSet& ds, bool addExtra);
 
     H5::H5File _h5f;
@@ -168,9 +169,11 @@ void H5Array::DataSet::_readType() {
     case H5T_OPAQUE: // blobs
         _complain("Unexpected type found in dataset.");
         break;
-    case H5T_COMPOUND: // compounds
+    case H5T_COMPOUND: {// compounds
         std::cout << "compound" << std::endl;
-        //processCompoundType(compType, "");
+        H5::CompType cType = _h5ds.getCompType();
+        attrs = _readCompType(cType);
+    }
         break;
     case H5T_REFERENCE: // refs
     case H5T_ENUM: // enums
@@ -189,7 +192,8 @@ void H5Array::DataSet::_readType() {
         break;
     } // switch(type_class)
     for(unsigned i=0; i < attrs->size(); ++i) {
-        std::cout << "attribute with size " << (*attrs)[i].tS
+        std::cout << "attribute ("  << (*attrs)[i].attrName
+                  << ") with size " << (*attrs)[i].tS
                   << " order " << (*attrs)[i].lEnd
                   << " sign " << (*attrs)[i].sign << std::endl;
     }
@@ -223,18 +227,44 @@ DimVectorPtr H5Array::DataSet::_readArrayDims(H5::ArrayType& at) {
 
 AttrVectorPtr H5Array::DataSet::_readSimpleType(H5::DataType const& dt) {
     AttrVectorPtr attrs(new AttrVector());
+    std::stringstream ss;
     switch(dt.getClass()) {
     case H5T_INTEGER: // integers
         attrs->push_back(Attr::makeInteger(dt));
+        ss << "int" << attrs->size();
+        attrs->back().attrName = ss.str();
         break;
     case H5T_FLOAT: // floats
         attrs->push_back(Attr::makeFloat(dt));
+        ss << "float" << attrs->size();
+        attrs->back().attrName = ss.str();
         break;
     case H5T_STRING: // char string
         attrs->push_back(Attr::makeString(dt));
+        ss << "str" << attrs->size();
+        attrs->back().attrName = ss.str();
         break;
     default:
         _complain("Unsupported type found(readSimpleType)");
+    }
+    return attrs;
+}
+
+AttrVectorPtr H5Array::DataSet::_readCompType(H5::CompType const& ct) {
+    // Read each member of the compound.
+    // For now, only support simple types.
+    int total = ct.getNmembers();
+    AttrVectorPtr attrs(new AttrVector());
+    for(int i = 0; i < total; ++i) {
+        H5::DataType dt = ct.getMemberDataType(static_cast<unsigned>(i));
+        AttrVectorPtr a = _readSimpleType(dt);
+        if(!a || (a->size() > 1)) {
+            _complain("Invalid type in compound.");
+            break;
+        }
+        // Use compound member's name.
+        (*a)[0].attrName = ct.getMemberName(i); 
+        attrs->push_back((*a)[0]);
     }
     return attrs;
 }
