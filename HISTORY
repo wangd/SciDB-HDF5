@@ -1,1 +1,6 @@
+History file for SciDB-HDF5
+===========================
+
+2011-07-01 Version 0.2: First SciDB plugin (loadhdf) version that is 
+           capable of loading an image array into SciDB. 
 2011-04-06 Version 0.1. Working array extraction.
