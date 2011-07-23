@@ -1,0 +1,5 @@
+
+v0.2: First SciDB plugin (loadhdf) version that is capable of loading
+      an image array into SciDB. 
+v0.1: A loader that properly uses the HDF5 API to extract type
+      information and data.  It doesn't load data anywhere. 
