@@ -52,12 +52,12 @@ void loadHdf(std::string const& filePath,
         std::cout << i << std::endl;
         //ci = ai->newChunk(*i).getIterator(chunkMode);
         scidb::Chunk& outChunk = ai->newChunk(hc);
-        outChunk.allocate(i.byteSize());
+        outChunk.allocate(i.byteSize(0));
         outChunk.setSparse(false); // Never sparse
         scidb::Chunk* outChunkPtr = &outChunk;
         // std::cout << "writing to buffer at " 
         //           << (void*) outChunk.getData() << std::endl;
-        i.readInto(outChunk.getData());
+        i.readInto(0, outChunk.getData());
         outChunk.setCount(0);
         outChunk.write();
     }

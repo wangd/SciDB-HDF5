@@ -2,6 +2,7 @@
 #define LOADER_H5ARRAY_HH
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include <boost/shared_array.hpp>
 #include "arrayCommonFwd.hh"
 // Forward
 namespace scidb {
@@ -39,17 +40,23 @@ public:
         Coordinates const& operator*() const; // De-reference
         bool operator==(SlabIter const& rhs) const; // Equality 
         bool operator!=(SlabIter const& rhs) const; // In-equality 
-        Size byteSize() const;
-        char* data();
-        void* readInto(void* buffer);
+        Size slabSize() const;
+        Size byteSize(int attNo) const;
+        void* readInto(int attNo, void* buffer);
+        void* readSlabInto(void* buffer);
+        void* readSingleInto(void* buffer);
         friend std::ostream& operator<<(std::ostream& os, SlabIter const& i);
 
     private:
         friend class H5Array;
         SlabIter(H5Array const& ha, bool makeEnd=false);
-        
+        void _initSlabCache();
+        void* _readAttrInto(void* buffer, void* slabBuffer, int attNo);
+
         H5Array const& _ha;
         Coordinates _coords;
+        bool _cacheValid;
+        boost::shared_array<char> _slabCache;
     };
     class ScidbIface {
     public:

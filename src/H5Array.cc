@@ -21,11 +21,11 @@ namespace {
         // (Can we read chunking decisions from HDF? Actually, we need
         // to, for 1D of 2D = 3D case. -Daniel
         //
-        typedef DimVector::iterator Iter;
-        Iter end = dv.end();
+        typedef DimVector::reverse_iterator Iter;
+        Iter end = dv.rend();
         int64_t accumulated = 0;
         int64_t threshold = 1024*1024; // Kind of arbitrary....
-        for(Iter i = dv.begin(); i != end; ++i) {
+        for(Iter i = dv.rbegin(); i != end; ++i) {
             int64_t thisDim = i->curNElems;
             int64_t next = accumulated * thisDim;
             if(next == 0) next = thisDim;
@@ -111,8 +111,8 @@ private:
 H5Array::Size H5Array::DataSet::getTypeSize() const {
     // FIXME: Need to generalize for non-array types.
     std::cout << "Dataset type size is " 
-              << _h5ds.getArrayType().getSize() << std::endl;
-    return _h5ds.getArrayType().getSize();
+              << _h5ds.getDataType().getSize() << std::endl;
+    return _h5ds.getDataType().getSize();
 }
 
 void H5Array::DataSet::readInto(void* buffer, 
@@ -200,7 +200,7 @@ void H5Array::DataSet::_readType() {
     _dimHint = dims->size();
     // add dimension
     DimVectorPtr d = _readDimensions(_h5ds, hasExtraDim);
-    dims->insert(dims->end(), d->begin(), d->end());
+    dims->insert(dims->begin(), d->begin(), d->end());
     for(unsigned i=0; i < dims->size(); ++i) {
         std::cout << "dim with size " << (*dims)[i].d1
                   << " - " << (*dims)[i].d2
@@ -322,11 +322,13 @@ H5Array::SlabIter& H5Array::SlabIter::operator++() {
         unsigned last = _coords.size() - 1;
         _coords[last] = dv[last].d1 + dv[last].curNElems;
     }
+    _cacheValid = false;
     return *this;
 }
 
 H5Array::SlabIter::SlabIter(H5Array const& ha, bool makeEnd) 
-    : _ha(ha), _coords(ha._chunkIncr.size()) {
+    : _ha(ha), _coords(ha._chunkIncr.size()), 
+      _cacheValid(false) {
 
     DimVectorPtr dp = ha._ds->getDims();
     DimVector& d = *dp;
@@ -339,7 +341,8 @@ H5Array::SlabIter::SlabIter(H5Array const& ha, bool makeEnd)
     } 
 }
 
-H5Array::Size H5Array::SlabIter::byteSize() const {
+/// @return size of attribute #attNo in bytes.
+H5Array::Size H5Array::SlabIter::byteSize(int attNo) const {    
     DimVectorPtr dp = _ha._ds->getDims();
     DimVector& d = *dp;
     Size s = 1;
@@ -348,20 +351,95 @@ H5Array::Size H5Array::SlabIter::byteSize() const {
         s *= d[i].chunkLength;
     }
     // Apply datatype size.
-    // FIXME: only applies to first attribute.
     AttrVectorPtr ap = _ha._ds->getAttrs();
     AttrVector& a = *ap;
-    Size typeSize = a[0].tS;
+    Size typeSize = a[attNo].tS;
     s *= typeSize;
     return s;
 }
 
-char* H5Array::SlabIter::data()  {
-    
-    return 0; // FIXME
+/// @return size of slab chunk (all attrs) in bytes.
+H5Array::Size H5Array::SlabIter::slabSize() const {    
+    DimVectorPtr dp = _ha._ds->getDims();
+    DimVector& d = *dp;
+    Size s = 1;
+    // Count elements
+    for(unsigned i=0; i < d.size(); ++i) {
+        s *= d[i].chunkLength;
+    }
+    // Apply datatype size.
+    s *= _ha._ds->getTypeSize();
+    return s;
 }
 
-void* H5Array::SlabIter::readInto(void* buffer) {
+void H5Array::SlabIter::_initSlabCache() {
+    _slabCache.reset(new char[slabSize()]);    
+}
+
+void* H5Array::SlabIter::_readAttrInto(void* buffer, 
+                                      void* slabBuffer,
+                                      int attNo) {
+    // Perform gymnastics to copy the particular attribute's values
+    // from the slab buffer into a single-attribute buffer.
+    return buffer;
+}
+
+/// Copy slab for compound attr into buffer
+void* H5Array::SlabIter::readSlabInto(void* buffer) {
+    DimVectorPtr dp = _ha._ds->getDims();
+    DimVector& d = *dp;
+    int rank = _coords.size();
+    // Setup dimensionalities
+    boost::shared_array<hsize_t> start(new hsize_t[rank]);
+    boost::shared_array<hsize_t> count(new hsize_t[rank]);
+    std::copy(_coords.begin(), _coords.end(), start.get());
+    std::transform(d.begin(), d.end(), count.get(), extractIncr());
+
+    // Hardcode for now. Unsure how to generally map. 
+    // This works for an array=1D of 2D, where Scidb=3D.
+    
+    rank = 1; 
+    hsize_t dims[1] = { d[d.size()-1].curNElems };
+    start[0] = start[2];
+    count[0] = 1;
+    hsize_t start0[1] = {0};
+    // End hardcode
+
+    // Setup spaces
+    assert(_ha._ds.get());
+    H5::DataSpace fileSpace = _ha._ds->getSpace();
+    H5::DataSpace memSpace(rank, dims);
+    hsize_t bufferSize = slabSize();
+    std::cout << "slab size is " << bufferSize << std::endl;
+
+    fileSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start.get());
+    memSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start0);
+    assert(memSpace.selectValid());
+    assert(fileSpace.selectValid());
+    assert(memSpace.getSelectNpoints() == fileSpace.getSelectNpoints());
+    std::cout << " dataspace has " << memSpace.getSelectNpoints() 
+              << " points" << std::endl;
+    memset(buffer, 0, bufferSize);
+    _ha._ds->readInto(buffer, memSpace, fileSpace);
+    return buffer;
+}
+
+/// Copy slab for attr #attNo into buffer
+void* H5Array::SlabIter::readInto(int attNo, void* buffer) {
+    if(_ha._ds->getAttrs()->size()  > 1) {
+        // Need to maintain buffer.
+        if(!_cacheValid) {
+            if(!_slabCache) _initSlabCache();
+            readSlabInto(_slabCache.get());
+            _cacheValid = true;
+        }
+        return _readAttrInto(buffer, _slabCache.get(), attNo);
+    } else {
+        return readSingleInto(buffer);
+    }
+}
+
+void* H5Array::SlabIter::readSingleInto(void* buffer) {
     DimVectorPtr dp = _ha._ds->getDims();
     DimVector& d = *dp;
     int rank = _coords.size();
@@ -374,8 +452,8 @@ void* H5Array::SlabIter::readInto(void* buffer) {
     // Hardcode for now. Unsure how to generally map. 
     // This works for an array=1D of 2D, where Scidb=3D.
     rank = 1; 
-    hsize_t dims[1] = { d[d.size()-1].curNElems };
-    start[0] = start[2];
+    hsize_t dims[1] = { d[0].chunkLength };
+    //start[0] = start[2];
     count[0] = 1;
     hsize_t start0[1] = {0};
     // End hardcode
@@ -384,7 +462,7 @@ void* H5Array::SlabIter::readInto(void* buffer) {
     assert(_ha._ds.get());
     H5::DataSpace fileSpace = _ha._ds->getSpace();
     H5::DataSpace memSpace(rank, dims);
-    hsize_t bufferSize = byteSize();
+    hsize_t bufferSize = byteSize(0);
 
     fileSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start.get());
     memSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start0);

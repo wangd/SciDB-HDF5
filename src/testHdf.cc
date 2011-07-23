@@ -53,21 +53,24 @@ BOOST_AUTO_TEST_CASE(checkSlabIter) {
 
         
         if(!buffer) {
-            uint64_t bufSize = i.byteSize();
+            uint64_t bufSize = i.byteSize(0);
             std::cout << "Allocating buffer of size " << bufSize << std::endl;
             buffer.reset(new char[bufSize]);
         }
-        i.readInto(buffer.get());
+        i.readInto(0, buffer.get());
     }
 }
 
-BOOST_AUTO_TEST_CASE(Compound) {
+BOOST_AUTO_TEST_CASE(CheckCompoundRead) {
     H5Array h(fName, dpath);
-    std::cout << "Iterating... " << fName << " --> " << path << std::endl;
+    std::cout << "Iterating... " << fName << " --> " << dpath << std::endl;
     std::cout << "begin: " << h.begin() << std::endl;
     std::cout << "end: " << h.end() << std::endl;
     int count =0;
     boost::shared_array<char> buffer;
+    uint64_t bufSize = 0;
+    SalVectorPtr ap = h.getScidbAttrs();
+    int attCount = ap->size();
     for(H5Array::SlabIter i = h.begin(); i != h.end(); ++i) {
         ++count;
         if(count < 80) {
@@ -78,13 +81,17 @@ BOOST_AUTO_TEST_CASE(Compound) {
             std::cout << "Stopping after 100 slabs." << std::endl;
             break;
         }
-        
-        if(!buffer) {
-            uint64_t bufSize = i.byteSize();
-            std::cout << "Allocating buffer of size " << bufSize << std::endl;
-            buffer.reset(new char[bufSize]);
+
+        for(int attNo=0; attNo < attCount; ++attNo) {
+            uint64_t sizeReq = i.byteSize(attNo);
+            std::cout << "(" << attNo << ")";
+            if((!buffer) || sizeReq > bufSize) {
+                bufSize = sizeReq;
+                std::cout << "Allocating buffer of size " << bufSize << std::endl;
+                buffer.reset(new char[bufSize]);
+            }
+            i.readInto(attNo, buffer.get());
         }
-        i.readInto(buffer.get());
     }
 }
 
