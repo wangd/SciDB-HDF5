@@ -109,9 +109,11 @@ private:
 };
 
 H5Array::Size H5Array::DataSet::getTypeSize() const {
-    // FIXME: Need to generalize for non-array types.
-    std::cout << "Dataset type size is " 
-              << _h5ds.getDataType().getSize() << std::endl;
+#if 0
+    std::cout << "Dataset element size is " 
+              << _h5ds.getDataType().getSize() 
+              << " bytes" << std::endl;
+#endif
     return _h5ds.getDataType().getSize();
 }
 
@@ -219,7 +221,7 @@ DimVectorPtr H5Array::DataSet::_readArrayDims(H5::ArrayType& at) {
     hsize_t* extents = new hsize_t[rank];
     at.getArrayDims(extents);
     for(int i=0; i < rank; ++i) { 
-        dims->push_back(Dim(0, extents[i]-1, extents[i]));
+        dims->push_back(Dim(0, extents[i]-1, extents[i], true));
     }
     delete[] extents;
     return dims;
@@ -381,6 +383,29 @@ void* H5Array::SlabIter::_readAttrInto(void* buffer,
                                       int attNo) {
     // Perform gymnastics to copy the particular attribute's values
     // from the slab buffer into a single-attribute buffer.
+    // Find stride and offset
+    size_t stride = _ha._ds->getTypeSize();
+    // Apply datatype size.
+    AttrVectorPtr ap = _ha._ds->getAttrs();
+    AttrVector& a = *ap;
+    size_t offset = 0;
+    for(int i=0; i < attNo; ++i) {
+        offset += a[i].tS;
+    }
+    size_t eltSize = a[attNo].tS;
+    size_t elts = byteSize(attNo) / eltSize;
+    size_t strideWithout = stride - eltSize;
+    char* dest = reinterpret_cast<char*>(buffer);
+    char* src = reinterpret_cast<char*>(slabBuffer);
+    src += offset; // Shift for attr offset
+    for(unsigned i=0; i < elts; ++i) {
+        for(unsigned c=0; c < eltSize; ++c) { // copy element
+            *dest++ = *src++;
+        }
+        //if(i < 10) std::cout << "("<< *reinterpret_cast<int*>(dest-4) <<")";
+
+        src += strideWithout; // Move to next array point.
+    }
     return buffer;
 }
 
@@ -394,33 +419,37 @@ void* H5Array::SlabIter::readSlabInto(void* buffer) {
     boost::shared_array<hsize_t> count(new hsize_t[rank]);
     std::copy(_coords.begin(), _coords.end(), start.get());
     std::transform(d.begin(), d.end(), count.get(), extractIncr());
-
-    // Hardcode for now. Unsure how to generally map. 
-    // This works for an array=1D of 2D, where Scidb=3D.
+    boost::shared_array<hsize_t> start0(new hsize_t[rank]);
+    memset(start0.get(), 0, sizeof(hsize_t)*rank);    
     
-    rank = 1; 
-    hsize_t dims[1] = { d[d.size()-1].curNElems };
-    start[0] = start[2];
-    count[0] = 1;
-    hsize_t start0[1] = {0};
-    // End hardcode
-
+    // Alter rank to reflect HDF5 array of arrays
+    for(int i=0; i < rank; ++i) {
+        if(d[i].inside) { // Reset rank to first "inside" dimension.
+            rank = i;
+            break;
+        }
+    }
+    std::cout << "rank is " << rank << std::endl;
     // Setup spaces
     assert(_ha._ds.get());
     H5::DataSpace fileSpace = _ha._ds->getSpace();
-    H5::DataSpace memSpace(rank, dims);
+    H5::DataSpace memSpace(rank, count.get());
     hsize_t bufferSize = slabSize();
-    std::cout << "slab size is " << bufferSize << std::endl;
-
     fileSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start.get());
-    memSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start0);
+    memSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start0.get());
     assert(memSpace.selectValid());
     assert(fileSpace.selectValid());
-    assert(memSpace.getSelectNpoints() == fileSpace.getSelectNpoints());
-    std::cout << " dataspace has " << memSpace.getSelectNpoints() 
+#if 1
+    std::cout << "slab size is " << bufferSize << std::endl;
+
+    std::cout << "target space has " << memSpace.getSelectNpoints() 
+              << " points, src has " << fileSpace.getSelectNpoints()
               << " points" << std::endl;
+#endif
+    assert(memSpace.getSelectNpoints() == fileSpace.getSelectNpoints());
     memset(buffer, 0, bufferSize);
     _ha._ds->readInto(buffer, memSpace, fileSpace);
+
     return buffer;
 }
 
@@ -435,7 +464,7 @@ void* H5Array::SlabIter::readInto(int attNo, void* buffer) {
         }
         return _readAttrInto(buffer, _slabCache.get(), attNo);
     } else {
-        return readSingleInto(buffer);
+        return readSlabInto(buffer);
     }
 }
 
@@ -451,6 +480,7 @@ void* H5Array::SlabIter::readSingleInto(void* buffer) {
 
     // Hardcode for now. Unsure how to generally map. 
     // This works for an array=1D of 2D, where Scidb=3D.
+    
     rank = 1; 
     hsize_t dims[1] = { d[0].chunkLength };
     //start[0] = start[2];

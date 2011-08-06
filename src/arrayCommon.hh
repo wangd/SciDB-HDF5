@@ -59,13 +59,16 @@ typedef boost::shared_ptr<SalVector> SalVectorPtr;
 ////////////////////////////////////////////////////////////////////////
 class Dim {
 public:
-    Dim(int64_t _d1, int64_t _d2, int64_t _n) 
-        : d1(_d1), d2(_d2), curNElems(_n), chunkLength(_n) {}
+    Dim(int64_t _d1, int64_t _d2, int64_t _n, bool inside_=false) 
+        : d1(_d1), d2(_d2), curNElems(_n), chunkLength(_n), 
+          inside(inside_) {}
         
     int64_t d1; // start (typically 0)
     int64_t d2; // end or UNLIMITED
     int64_t curNElems; // current dimensionality (number of elements)
     int chunkLength; // Chunk size in this dimension.
+    bool inside;  // dimension is inside an embedded array
+
     static const uint64_t MAX;
     static const int64_t UNLIMITED;
     static const int64_t UNKNOWN;

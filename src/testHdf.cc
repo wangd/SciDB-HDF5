@@ -91,6 +91,9 @@ BOOST_AUTO_TEST_CASE(CheckCompoundRead) {
                 buffer.reset(new char[bufSize]);
             }
             i.readInto(attNo, buffer.get());
+            for(int i=0; i < 10; ++i) {
+                std::cout << ((int*)buffer.get())[i] << " ";
+            } std::cout << std::endl;
         }
     }
 }
