@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(checkSlabIter) {
 
         
         if(!buffer) {
-            uint64_t bufSize = i.byteSize(0);
+            uint64_t bufSize = i.slabAttrSize(0);
             std::cout << "Allocating buffer of size " << bufSize << std::endl;
             buffer.reset(new char[bufSize]);
         }
@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(CheckCompoundRead) {
         }
 
         for(int attNo=0; attNo < attCount; ++attNo) {
-            uint64_t sizeReq = i.byteSize(attNo);
+            uint64_t sizeReq = i.slabAttrSize(attNo);
             std::cout << "(" << attNo << ")";
             if((!buffer) || sizeReq > bufSize) {
                 bufSize = sizeReq;

@@ -344,7 +344,7 @@ H5Array::SlabIter::SlabIter(H5Array const& ha, bool makeEnd)
 }
 
 /// @return size of attribute #attNo in bytes.
-H5Array::Size H5Array::SlabIter::byteSize(int attNo) const {    
+H5Array::Size H5Array::SlabIter::slabAttrSize(int attNo) const {    
     DimVectorPtr dp = _ha._ds->getDims();
     DimVector& d = *dp;
     Size s = 1;
@@ -365,9 +365,11 @@ H5Array::Size H5Array::SlabIter::slabSize() const {
     DimVectorPtr dp = _ha._ds->getDims();
     DimVector& d = *dp;
     Size s = 1;
-    // Count elements
+    // Count elements, but not embedded ones.
     for(unsigned i=0; i < d.size(); ++i) {
+        if(d[i].inside) break; // stop counting.
         s *= d[i].chunkLength;
+
     }
     // Apply datatype size.
     s *= _ha._ds->getTypeSize();
@@ -393,7 +395,7 @@ void* H5Array::SlabIter::_readAttrInto(void* buffer,
         offset += a[i].tS;
     }
     size_t eltSize = a[attNo].tS;
-    size_t elts = byteSize(attNo) / eltSize;
+    size_t elts = slabAttrSize(attNo) / eltSize;
     size_t strideWithout = stride - eltSize;
     char* dest = reinterpret_cast<char*>(buffer);
     char* src = reinterpret_cast<char*>(slabBuffer);
@@ -492,7 +494,7 @@ void* H5Array::SlabIter::readSingleInto(void* buffer) {
     assert(_ha._ds.get());
     H5::DataSpace fileSpace = _ha._ds->getSpace();
     H5::DataSpace memSpace(rank, dims);
-    hsize_t bufferSize = byteSize(0);
+    hsize_t bufferSize = slabAttrSize(0);
 
     fileSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start.get());
     memSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start0);

@@ -41,7 +41,7 @@ public:
         bool operator==(SlabIter const& rhs) const; // Equality 
         bool operator!=(SlabIter const& rhs) const; // In-equality 
         Size slabSize() const;
-        Size byteSize(int attNo) const;
+        Size slabAttrSize(int attNo) const;
         void* readInto(int attNo, void* buffer);
         void* readSlabInto(void* buffer);
         void* readSingleInto(void* buffer);
