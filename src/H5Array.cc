@@ -305,6 +305,64 @@ DimVectorPtr H5Array::DataSet::_readDimensions(H5::DataSet& ds,
 ////////////////////////////////////////////////////////////////////////
 // H5Array::SlabIter
 ////////////////////////////////////////////////////////////////////////
+class H5Array::SlabIter::Cursor {
+public:
+    void setStart(Coordinates& c) {
+        assert(_start.get());
+        assert(_extent.get());
+        std::copy(c.begin(), c.end(), _start.get());        
+        fileSpace.selectHyperslab(H5S_SELECT_SET, 
+                                   _extent.get(), _start.get());
+        memSpace.selectHyperslab(H5S_SELECT_SET, 
+                                  _extent.get(), _start0.get());
+        assert(memSpace.selectValid());
+        assert(fileSpace.selectValid());
+        assert(memSpace.getSelectNpoints() == fileSpace.getSelectNpoints());
+#if 0
+        std::cout << "rank is " << rank << std::endl;
+        std::cout << "slab size is " << bufferSize << std::endl;
+        
+        std::cout << "target space has " << memSpace.getSelectNpoints() 
+                  << " points, src has " << fileSpace.getSelectNpoints()
+                  << " points" << std::endl;
+#endif
+    }
+
+    Cursor(DimVector& d, H5Array::DataSet& ds) {
+        int rank = _hRank = d.size();
+        
+        // Setup dimensionalities
+        _start.reset(new hsize_t[rank]);
+        _extent.reset(new hsize_t[rank]);
+        std::transform(d.begin(), d.end(), _extent.get(), extractIncr());
+        _start0.reset(new hsize_t[rank]);
+        memset(_start0.get(), 0, sizeof(hsize_t)*rank);    
+        
+        // Alter rank to reflect HDF5 array of arrays
+        for(int i=0; i < rank; ++i) {
+            if(d[i].inside) { // Reset rank to first "inside" dimension.
+                _hRank = i;
+                break;
+            }
+        }
+        // Setup spaces
+        fileSpace = ds.getSpace();
+        memSpace = H5::DataSpace(_hRank, _extent.get());    
+    }
+
+    H5::DataSpace fileSpace;
+    H5::DataSpace memSpace;
+
+private:
+    boost::shared_array<hsize_t> _start;
+    boost::shared_array<hsize_t> _start0;
+    boost::shared_array<hsize_t> _extent;
+    int _hRank;
+};
+
+////////////////////////////////////////////////////////////////////////
+// H5Array::SlabIter
+////////////////////////////////////////////////////////////////////////
 H5Array::SlabIter& H5Array::SlabIter::operator++() {
     DimVectorPtr dp = _ha._ds->getDims();
     DimVector& dv = *dp;
@@ -340,7 +398,10 @@ H5Array::SlabIter::SlabIter(H5Array const& ha, bool makeEnd)
     if(makeEnd) { 
         unsigned last = _coords.size() - 1;
         _coords[last] += d[last].curNElems;
-    } 
+    }
+    assert(_ha._ds.get());
+    _slabSize = _computeSlabSize();
+    _cursor.reset(new Cursor(d, *_ha._ds));
 }
 
 /// @return size of attribute #attNo in bytes.
@@ -361,7 +422,7 @@ H5Array::Size H5Array::SlabIter::slabAttrSize(int attNo) const {
 }
 
 /// @return size of slab chunk (all attrs) in bytes.
-H5Array::Size H5Array::SlabIter::slabSize() const {    
+H5Array::Size H5Array::SlabIter::_computeSlabSize() const {    
     DimVectorPtr dp = _ha._ds->getDims();
     DimVector& d = *dp;
     Size s = 1;
@@ -377,8 +438,10 @@ H5Array::Size H5Array::SlabIter::slabSize() const {
 }
 
 void H5Array::SlabIter::_initSlabCache() {
-    _slabCache.reset(new char[slabSize()]);    
+    _slabCache.reset(new char[slabSize()]);
 }
+
+
 
 void* H5Array::SlabIter::_readAttrInto(void* buffer, 
                                       void* slabBuffer,
@@ -413,45 +476,10 @@ void* H5Array::SlabIter::_readAttrInto(void* buffer,
 
 /// Copy slab for compound attr into buffer
 void* H5Array::SlabIter::readSlabInto(void* buffer) {
-    DimVectorPtr dp = _ha._ds->getDims();
-    DimVector& d = *dp;
-    int rank = _coords.size();
-    // Setup dimensionalities
-    boost::shared_array<hsize_t> start(new hsize_t[rank]);
-    boost::shared_array<hsize_t> count(new hsize_t[rank]);
-    std::copy(_coords.begin(), _coords.end(), start.get());
-    std::transform(d.begin(), d.end(), count.get(), extractIncr());
-    boost::shared_array<hsize_t> start0(new hsize_t[rank]);
-    memset(start0.get(), 0, sizeof(hsize_t)*rank);    
-    
-    // Alter rank to reflect HDF5 array of arrays
-    for(int i=0; i < rank; ++i) {
-        if(d[i].inside) { // Reset rank to first "inside" dimension.
-            rank = i;
-            break;
-        }
-    }
-    // Setup spaces
-    assert(_ha._ds.get());
-    H5::DataSpace fileSpace = _ha._ds->getSpace();
-    H5::DataSpace memSpace(rank, count.get());
-    hsize_t bufferSize = slabSize();
-    fileSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start.get());
-    memSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start0.get());
-    assert(memSpace.selectValid());
-    assert(fileSpace.selectValid());
-#if 0
-    std::cout << "rank is " << rank << std::endl;
-    std::cout << "slab size is " << bufferSize << std::endl;
-
-    std::cout << "target space has " << memSpace.getSelectNpoints() 
-              << " points, src has " << fileSpace.getSelectNpoints()
-              << " points" << std::endl;
-#endif
-    assert(memSpace.getSelectNpoints() == fileSpace.getSelectNpoints());
-    memset(buffer, 0, bufferSize);
-    _ha._ds->readInto(buffer, memSpace, fileSpace);
-
+    assert(_cursor);
+    _cursor->setStart(_coords);
+    memset(buffer, 0, _slabSize);
+    _ha._ds->readInto(buffer, _cursor->memSpace, _cursor->fileSpace);
     return buffer;
 }
 

@@ -40,7 +40,7 @@ public:
         Coordinates const& operator*() const; // De-reference
         bool operator==(SlabIter const& rhs) const; // Equality 
         bool operator!=(SlabIter const& rhs) const; // In-equality 
-        Size slabSize() const;
+        Size slabSize() const { return _slabSize; }
         Size slabAttrSize(int attNo) const;
         void* readInto(int attNo, void* buffer);
         void* readSlabInto(void* buffer);
@@ -51,11 +51,16 @@ public:
         SlabIter(H5Array const& ha, bool makeEnd=false);
         void _initSlabCache();
         void* _readAttrInto(void* buffer, void* slabBuffer, int attNo);
+        Size _computeSlabSize() const;
 
         H5Array const& _ha;
         Coordinates _coords;
+        Size _slabSize;
         bool _cacheValid;
         boost::shared_array<char> _slabCache;
+        class Cursor;
+        boost::shared_ptr<Cursor> _cursor;
+
     };
     class ScidbIface {
     public:
