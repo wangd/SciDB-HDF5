@@ -1,0 +1,48 @@
+Notes on the design of the HDF5 to SciDB loader
+Daniel L. Wang
+
+1. Type Mapping
+===============
+
+SciDB and HDF5 have different type systems.  In general, HDF5 has a
+more flexible and more inclusive type system. It is also significantly
+more complex. The HDF5 format and library API reflects its designers
+intent for a format that is large enough to meet the wants and needs
+of a broad user base that is concerned with efficiency, flexibility,
+organization, performance, and compatibility managing array and
+array-related data.  It is no surprise that in importing HDF5 data
+into SciDB, translation and re-mapping is necessary, and some
+structure and semantics may be lost.
+
+The loader's implementation began with a focus on importing the most
+important data from the LCLS (Linac Coherent Light Source) facility at
+the SLAC National Accelerator Laboratory.  The desire was to import
+those data for immediate manipulation and analysis in SciDB.  Thus
+existing HDF5 types must be mapped to types most convenient for
+manipulation in SciDB.
+
+So far, three important HDF5 types have been identified.
+
+1. "image":a  1D array (extendable, currently 0-42246[inclusive]) of:
+ - a fixed 2D array 1024x1024 of:
+   - a 16-bit (2-byte) integer
+
+2. "data": A 1D array (extendable, currently 0-42246[inclusive]) of:
+ - a compound data type of:
+   - a 32-bit (4-byte) integer "width"
+   - a 32-bit (4-byte) integer "height"
+   - a 32-bit (4-byte) integer "depth"
+   - a 32-bit (4-byte) integer "offset"
+
+3. "time": A 1D array (extendable, currently 0-42246[inclusive]) of:
+ - a compound data type of:
+   - a 32-bit (4-byte) integer "seconds"
+   - a 32-bit (4-byte) integer "nanoseconds"
+
+In SciDB the "image" array is best represented as a 3D array, since
+this would provide the most flexibility in slicing, summarizing, and
+manipulating.  Types 2 and 3 are more easily mapped to SciDB, as
+simple 1D arrays with 4 "SciDB attributes" and 2 "SciDB attributes",
+respectively. (Attributes are metadata in HDF5. See:
+http://www.hdfgroup.org/hdf5-quest.html#dvsattr). 
+
