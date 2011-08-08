@@ -46,3 +46,14 @@ simple 1D arrays with 4 "SciDB attributes" and 2 "SciDB attributes",
 respectively. (Attributes are metadata in HDF5. See:
 http://www.hdfgroup.org/hdf5-quest.html#dvsattr). 
 
+In SciDB, chunking parameters are crucial for efficient operation. In
+mapping types, chunk extents should be chosen so that they can be
+defined in the array's top-level array dimensions.  For Type 1, this
+means that chunking should be split in the 1D space and never in its
+embedded 2D arrays.
+
+In the loader implementation, the resultant differences between HDF5
+types and their translated SciDB types need to be recorded and
+tracked.  When accessing through the HDF5 API, the HDF5 type must be
+used, but when creating SciDB arrays and writing to them, the SciDB
+type must be used.
