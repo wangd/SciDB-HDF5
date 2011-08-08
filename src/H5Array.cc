@@ -431,7 +431,6 @@ void* H5Array::SlabIter::readSlabInto(void* buffer) {
             break;
         }
     }
-    std::cout << "rank is " << rank << std::endl;
     // Setup spaces
     assert(_ha._ds.get());
     H5::DataSpace fileSpace = _ha._ds->getSpace();
@@ -441,7 +440,8 @@ void* H5Array::SlabIter::readSlabInto(void* buffer) {
     memSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start0.get());
     assert(memSpace.selectValid());
     assert(fileSpace.selectValid());
-#if 1
+#if 0
+    std::cout << "rank is " << rank << std::endl;
     std::cout << "slab size is " << bufferSize << std::endl;
 
     std::cout << "target space has " << memSpace.getSelectNpoints() 
@@ -468,42 +468,6 @@ void* H5Array::SlabIter::readInto(int attNo, void* buffer) {
     } else {
         return readSlabInto(buffer);
     }
-}
-
-void* H5Array::SlabIter::readSingleInto(void* buffer) {
-    DimVectorPtr dp = _ha._ds->getDims();
-    DimVector& d = *dp;
-    int rank = _coords.size();
-    // Setup dimensionalities
-    boost::shared_array<hsize_t> start(new hsize_t[rank]);
-    boost::shared_array<hsize_t> count(new hsize_t[rank]);
-    std::copy(_coords.begin(), _coords.end(), start.get());
-    std::transform(d.begin(), d.end(), count.get(), extractIncr());
-
-    // Hardcode for now. Unsure how to generally map. 
-    // This works for an array=1D of 2D, where Scidb=3D.
-    
-    rank = 1; 
-    hsize_t dims[1] = { d[0].chunkLength };
-    //start[0] = start[2];
-    count[0] = 1;
-    hsize_t start0[1] = {0};
-    // End hardcode
-
-    // Setup spaces
-    assert(_ha._ds.get());
-    H5::DataSpace fileSpace = _ha._ds->getSpace();
-    H5::DataSpace memSpace(rank, dims);
-    hsize_t bufferSize = slabAttrSize(0);
-
-    fileSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start.get());
-    memSpace.selectHyperslab(H5S_SELECT_SET, count.get(), start0);
-    assert(memSpace.selectValid());
-    assert(fileSpace.selectValid());
-    assert(memSpace.getSelectNpoints() == fileSpace.getSelectNpoints());
-    memset(buffer, 0, bufferSize);
-    _ha._ds->readInto(buffer, memSpace, fileSpace);
-    return buffer;
 }
 
 std::ostream& operator<<(std::ostream& os, H5Array::SlabIter const& i) {

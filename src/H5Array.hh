@@ -44,7 +44,6 @@ public:
         Size slabAttrSize(int attNo) const;
         void* readInto(int attNo, void* buffer);
         void* readSlabInto(void* buffer);
-        void* readSingleInto(void* buffer);
         friend std::ostream& operator<<(std::ostream& os, SlabIter const& i);
 
     private:
