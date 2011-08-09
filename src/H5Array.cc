@@ -535,7 +535,6 @@ SalVectorPtr H5Array::getScidbAttrs() const {
     
 }
 
-
 boost::shared_ptr<scidb::ArrayDesc> H5Array::getArrayDesc() const {
     return ScidbIface::getArrayDesc(*this);
 }
@@ -548,6 +547,18 @@ SdlVectorPtr H5Array::getScidbDims() const {
     SdlVectorPtr v(new SdlVector(dims->size()));
     transform(dims->begin(), dims->end(), v->begin(), toScidbLite());
     return v;
+}
+
+int H5Array::getSlabCount() const {
+    return 1; // FIXME
+}
+
+int H5Array::getRank() const {
+    return _ds->getDims()->size();
+}
+
+int  H5Array::getAttrCount() const {
+        return _ds->getAttrs()->size();
 }
 
 void H5Array::_imposeChunking(SdlVectorPtr dims) const {
@@ -568,6 +579,7 @@ void H5Array::_imposeChunking(SdlVectorPtr dims) const {
         if(accSize > minFrag) d.chunkInterval = 1; 
     }
 }
+
 
 #if 0
 _schema = ArrayDesc(versionName, desc.getAttributes(), newDims);

@@ -14,10 +14,16 @@
 namespace {
     class Copier {
     public:
-        Copier(scidb::ArrayID& arrayId) : _array(arrayId) {
+        Copier(scidb::ArrayID& arrayId, int attrCount)
+            : _array(arrayId), _attrCount(attrCount) {
             // Nothing for now.
         }
 
+        void copyChunks(H5Array::SlabIter& si) {
+            for(int i=0; i < _attrCount; ++i) {
+                copyChunk(si, i);
+            }
+        }
         void copyChunk(H5Array::SlabIter& si,
                        int attNo) {
             // Not sure about coordinate order. HDF: minor precedes major.
@@ -37,6 +43,7 @@ namespace {
         }
     private:
         scidb::DBArray _array;
+        int _attrCount;
     };
 }
 
@@ -44,6 +51,7 @@ namespace {
 void loadHdf(std::string const& filePath, 
              std::string const& hdfPath, 
              std::string const& arrayName) {
+    std::string resultName = arrayName;
 
     // Do something good.
     H5Array ha(filePath, hdfPath);
@@ -61,25 +69,22 @@ void loadHdf(std::string const& filePath,
 
     // Get array id; hardcode partitioning scheme for now.
     scidb::ArrayID aid = catalog.addArray(*dptr, scidb::psLocalNode); 
-    Copier copier(aid);
-
-    std::cout << "Added array to catalog and contructed dbarray." << std::endl;
+    Copier copier(aid, ha.getAttrCount());
     
-    // Only handle single-attribute right now.
-    int chunkMode = 0; // chunk mode (dense/sparse)
-    chunkMode |=  scidb::ChunkIterator::NO_EMPTY_CHECK;
+    std::cout << "Added array to catalog and contructed dbarray." 
+              << std::endl; 
+    
     std::cout << "Iterating... " << std::endl;
     std::cout << "begin: " << ha.begin() << std::endl;
     std::cout << "end: " << ha.end() << std::endl;
     for(H5Array::SlabIter i = ha.begin();
         i != ha.end(); ++i) {
         std::cout << i << std::endl;
-        copier.copyChunk(i, 0);
-
-
-
+        copier.copyChunks(i);
     }
+    
     // Fill results
 
-    //res.setString("SomeArray"); // Fill in result: name of new array
+    // FIXME: want to propagate some form of OK/FAIL result.
+    //res.setString(resultName); // Fill in result: name of new array
 }
