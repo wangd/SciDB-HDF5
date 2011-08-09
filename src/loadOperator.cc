@@ -11,6 +11,35 @@
 #include "H5Array.hh"
 #include "scidbConvert.hh"
 
+namespace {
+    class Copier {
+    public:
+        Copier(scidb::ArrayID& arrayId) : _array(arrayId) {
+            // Nothing for now.
+        }
+
+        void copyChunk(H5Array::SlabIter& si,
+                       int attNo) {
+            // Not sure about coordinate order. HDF: minor precedes major.
+            scidb::Coordinates const& coords = *si; 
+            boost::shared_ptr<scidb::ArrayIterator> ai;
+            ai = _array.getIterator(attNo);
+            scidb::Chunk& outChunk = ai->newChunk(coords);
+
+            outChunk.allocate(si.slabAttrSize(attNo));
+            outChunk.setSparse(false); // Never sparse
+            // scidb::Chunk* outChunkPtr = &outChunk;
+            // std::cout << "writing to buffer at " 
+            //           << (void*) outChunk.getData() << std::endl;
+            si.readInto(attNo, outChunk.getData());
+            outChunk.setCount(0); // FIXME: Count = num of elements.
+            outChunk.write();
+        }
+    private:
+        scidb::DBArray _array;
+    };
+}
+
 
 void loadHdf(std::string const& filePath, 
              std::string const& hdfPath, 
@@ -32,34 +61,23 @@ void loadHdf(std::string const& filePath,
 
     // Get array id; hardcode partitioning scheme for now.
     scidb::ArrayID aid = catalog.addArray(*dptr, scidb::psLocalNode); 
-    scidb::DBArray array(aid);
+    Copier copier(aid);
+
     std::cout << "Added array to catalog and contructed dbarray." << std::endl;
     
     // Only handle single-attribute right now.
     int chunkMode = 0; // chunk mode (dense/sparse)
     chunkMode |=  scidb::ChunkIterator::NO_EMPTY_CHECK;
-    boost::shared_ptr<scidb::ArrayIterator> ai = array.getIterator(0);
-    //ArrayDescPtr ap = newArrayDesc(ha.getScidbAttrs(), ha.getScidbDims());
     std::cout << "Iterating... " << std::endl;
     std::cout << "begin: " << ha.begin() << std::endl;
     std::cout << "end: " << ha.end() << std::endl;
     for(H5Array::SlabIter i = ha.begin();
         i != ha.end(); ++i) {
-        scidb::Coordinates hc(*i);
-        scidb::Coordinates c(hc.size());
-        std::reverse_copy(hc.begin(), hc.end(), c.begin());
-        // Not sure about coordinate order. HDF: minor precedes major.
         std::cout << i << std::endl;
-        //ci = ai->newChunk(*i).getIterator(chunkMode);
-        scidb::Chunk& outChunk = ai->newChunk(hc);
-        outChunk.allocate(i.slabAttrSize(0));
-        outChunk.setSparse(false); // Never sparse
-        scidb::Chunk* outChunkPtr = &outChunk;
-        // std::cout << "writing to buffer at " 
-        //           << (void*) outChunk.getData() << std::endl;
-        i.readInto(0, outChunk.getData());
-        outChunk.setCount(0);
-        outChunk.write();
+        copier.copyChunk(i, 0);
+
+
+
     }
     // Fill results
 
