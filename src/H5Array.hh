@@ -44,7 +44,7 @@ public:
         Size slabAttrSize(int attNo) const;
         void* readInto(int attNo, void* buffer);
         void* readSlabInto(void* buffer);
-        Size getCount(int attNo) const;
+        Size getCount(int attNo, bool clipEdges) const;
         friend std::ostream& operator<<(std::ostream& os, SlabIter const& i);
 
     private:

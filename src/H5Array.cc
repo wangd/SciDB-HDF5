@@ -8,9 +8,8 @@
 #include <iostream>
 #include <boost/make_shared.hpp>
 #include <boost/shared_array.hpp>
+
 namespace {
-
-
     ////////////////////////////////////////////////////////////////////
     // Helpers for H5Array::DataSet
     ////////////////////////////////////////////////////////////////////
@@ -406,13 +405,7 @@ H5Array::SlabIter::SlabIter(H5Array const& ha, bool makeEnd)
 
 /// @return size of attribute #attNo in bytes.
 H5Array::Size H5Array::SlabIter::slabAttrSize(int attNo) const {    
-    DimVectorPtr dp = _ha._ds->getDims();
-    DimVector& d = *dp;
-    Size s = 1;
-    // Count elements
-    for(unsigned i=0; i < d.size(); ++i) {
-        s *= d[i].chunkLength;
-    }
+    Size s = getCount(attNo, false);
     // Apply datatype size.
     AttrVectorPtr ap = _ha._ds->getAttrs();
     AttrVector& a = *ap;
@@ -501,8 +494,21 @@ void* H5Array::SlabIter::readInto(int attNo, void* buffer) {
 // Find non-empty members in this slab. 
 // Always equal to slab extent, since everything is non-empty.
 // ...except when array edge is not on a chunk boundary.
-H5Array::Size  H5Array::SlabIter::getCount(int attNo) const {
-    return 0;  // FIXME: Always return 0 for now.
+H5Array::Size  H5Array::SlabIter::getCount(int attNo, bool clipEdges) const {
+    DimVectorPtr dp = _ha._ds->getDims();
+    DimVector& d = *dp;
+    Size s = 1;
+    // Count elements
+    for(unsigned i=0; i < d.size(); ++i) {
+        Size ext = d[i].chunkLength;
+        if(clipEdges) {
+            Size nElem = d[i].curNElems;
+            Size pos = _coords[i];
+            if(ext > (nElem - pos)) ext = nElem - pos;
+        } 
+        s *= ext;
+    }
+    return s; 
 }
 
 std::ostream& operator<<(std::ostream& os, H5Array::SlabIter const& i) {

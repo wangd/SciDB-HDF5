@@ -38,7 +38,7 @@ namespace {
             // std::cout << "writing to buffer at " 
             //           << (void*) outChunk.getData() << std::endl;
             si.readInto(attNo, outChunk.getData());
-            outChunk.setCount(si.getCount(attNo));
+            outChunk.setCount(si.getCount(attNo, true));
             outChunk.write();
         }
     private:

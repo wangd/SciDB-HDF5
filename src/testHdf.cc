@@ -71,10 +71,10 @@ BOOST_AUTO_TEST_CASE(CheckCompoundRead) {
     uint64_t bufSize = 0;
     SalVectorPtr ap = h.getScidbAttrs();
     int attCount = ap->size();
-    for(H5Array::SlabIter i = h.begin(); i != h.end(); ++i) {
+    for(H5Array::SlabIter slabi = h.begin(); slabi != h.end(); ++slabi) {
         ++count;
         if(count < 80) {
-            std::cout << i << std::endl;
+            std::cout << slabi << std::endl;
         } else if(count == 80) {
             std::cout << "Suppressing..." << std:: endl;
         } else if(count > 100) {
@@ -83,17 +83,20 @@ BOOST_AUTO_TEST_CASE(CheckCompoundRead) {
         }
 
         for(int attNo=0; attNo < attCount; ++attNo) {
-            uint64_t sizeReq = i.slabAttrSize(attNo);
+            uint64_t sizeReq = slabi.slabAttrSize(attNo);
             std::cout << "(" << attNo << ")";
             if((!buffer) || sizeReq > bufSize) {
                 bufSize = sizeReq;
-                std::cout << "Allocating buffer of size " << bufSize << std::endl;
+                std::cout << "Allocating buffer of size " 
+                          << bufSize << std::endl;
                 buffer.reset(new char[bufSize]);
             }
-            i.readInto(attNo, buffer.get());
+            slabi.readInto(attNo, buffer.get());
             for(int i=0; i < 10; ++i) {
                 std::cout << ((int*)buffer.get())[i] << " ";
-            } std::cout << std::endl;
+            } 
+            std::cout << " Count=" << slabi.getCount(attNo, true)
+                      << std::endl;
         }
     }
 }
