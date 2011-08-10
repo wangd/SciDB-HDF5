@@ -1,6 +1,8 @@
 History file for SciDB-HDF5
 ===========================
-
+2011-08-10 Version 0.3: Added capability to load arrays of simple
+           compounds as scidb multi-attribute arrays.  More correct
+           handling of dimensions when unrolling arrays-of-arrays.           
 2011-07-01 Version 0.2: First SciDB plugin (loadhdf) version that is 
            capable of loading an image array into SciDB. 
 2011-04-06 Version 0.1. Working array extraction.
