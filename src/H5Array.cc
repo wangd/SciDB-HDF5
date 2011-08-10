@@ -498,6 +498,13 @@ void* H5Array::SlabIter::readInto(int attNo, void* buffer) {
     }
 }
 
+// Find non-empty members in this slab. 
+// Always equal to slab extent, since everything is non-empty.
+// ...except when array edge is not on a chunk boundary.
+H5Array::Size  H5Array::SlabIter::getCount(int attNo) const {
+    return 0;  // FIXME: Always return 0 for now.
+}
+
 std::ostream& operator<<(std::ostream& os, H5Array::SlabIter const& i) {
     os << "SlabIter @ ";
     std::copy(i._coords.begin(), i._coords.end(), 

@@ -38,7 +38,7 @@ namespace {
             // std::cout << "writing to buffer at " 
             //           << (void*) outChunk.getData() << std::endl;
             si.readInto(attNo, outChunk.getData());
-            outChunk.setCount(0); // FIXME: Count = num of elements.
+            outChunk.setCount(si.getCount(attNo));
             outChunk.write();
         }
     private:
