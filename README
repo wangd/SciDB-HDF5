@@ -58,6 +58,14 @@ iquery -aq "count(image);"
 ## pixel standard deviations for the first 3 images in the series
 iquery -aq "stdev(subarray(image,0,0,0,1023,1023,2),int1,unnamed2);"
 
+## Load a compound:
+iquery -aq "loadhdf('imagetime', '/u24/ldrd/sxrcom10-r0232.h5',
+'/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1/time');
+
+## See its shape:
+iquery -aq "show(imagetime);"
+[("imagetime<seconds:uint32 NOT NULL,nanoseconds:uint32 NOT NULL> [unnamed0=0:9223372036854775807,42247,0]")]
+
 
 
 Notes:
