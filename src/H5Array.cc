@@ -84,7 +84,6 @@ public:
     Size getTypeSize() const;
     H5::DataSpace getSpace() { return _h5ds.getSpace(); }
 
-    // FIXME ugly interface now.
     void readInto(void* buffer, H5::DataSpace& mem, H5::DataSpace& file);
 
 private:
@@ -524,8 +523,6 @@ std::ostream& operator<<(std::ostream& os, H5Array::SlabIter const& i) {
 ////////////////////////////////////////////////////////////////////////
 H5Array::H5Array(std::string const& fPath, std::string const& path) 
     : _filePath(fPath), _path(path), _ds(new DataSet(fPath, path)) {
-    // FIXME Need to setup chunkIncr 
-    // _chunkIncr is vector for incrementing slabs.
     // Pull it from the dims.
     DimVectorPtr dims = _ds->getDims();
     _chunkIncr.resize(dims->size());
@@ -563,6 +560,9 @@ SdlVectorPtr H5Array::getScidbDims() const {
 }
 
 int H5Array::getSlabCount() const {
+    // Perform "dimensional arithmetic" and divide the dimensional
+    // extents by the chunk increment using long division and rounding
+    // up if we have a remainder. 
     return 1; // FIXME
 }
 

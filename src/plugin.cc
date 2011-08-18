@@ -22,17 +22,6 @@ namespace {
 ////////////////////////////////////////////////////////////////////////
 // Boilerplate
 ////////////////////////////////////////////////////////////////////////
-#if 0
-EXPORTED_FUNCTION void GetPluginVersion(uint32_t& major, uint32_t& minor, 
-                                        uint32_t& patch, uint32_t& build)
-{
-    // Provide correct values here. SciDB check it and does not allow to load too new plugins.
-    major = 1;
-    minor = 0;
-    patch = 0;
-    build = 0;
-}
-#endif
 // FIXME: This could be a pipelined loader that doesn't just load into an array...
 
 // Logical
