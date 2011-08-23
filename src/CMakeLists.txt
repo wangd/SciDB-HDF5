@@ -75,6 +75,11 @@ find_library(BOOST_PROGOPTS boost_program_options)
 add_executable(testHdf testHdf.cc H5Array.cc arrayCommon.cc H5Array_stub.cc)
 target_link_libraries(testHdf ${HDF5_LIBRARIES})
 
+## FITS
+include_directories(${CCFITS_INCLUDE} )
+add_executable(testFits testFits.cc)
+target_link_libraries(testFits ${CFITSIO_LIBRARY} ${CCFITS_LIBRARY})
+
 
 #include(FeatureSummary)
 #print_enabled_features()
