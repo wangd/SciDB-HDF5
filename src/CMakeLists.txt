@@ -77,7 +77,7 @@ target_link_libraries(testHdf ${HDF5_LIBRARIES})
 
 ## FITS
 include_directories(${CCFITS_INCLUDE} )
-add_executable(testFits testFits.cc)
+add_executable(testFits testFits.cc FitsArray.cc)
 target_link_libraries(testFits ${CFITSIO_LIBRARY} ${CCFITS_LIBRARY})
 
 

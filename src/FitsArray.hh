@@ -29,27 +29,25 @@ typedef uint32_t FitsDim;
 
 class FitsArray {
 public:
+    typedef std::vector<FitsDim> DimVector;
+
     // fitsFile: path to FITS file
     // hduNum: 0 = primary HDU, 1+: extension HDU #
-    FitsArray(std::string const& fName, int hduNum) {
-        std::auto_ptr<CCfits::FITS> infile(new CCfits::FITS(fName, 
-                                                            CCfits::Read));
-        assert(infile.get());
-        if(hduNum == 0) {
-            _build(infile->pHDU());
-        } else {
-            _build(infile->extension(hduNum));
-        }        
-    }
-    private:
-        void _build(CCfits::HDU const& hdu) {
-        }
+    FitsArray(std::string const& fName, int hduNum);
+
+    static void dbgCheckHeader(std::string const& fName);
+    static void dbgCheckArrays(std::string const& fName);
+    
+private:
+    void _build(CCfits::HDU const& hdu); 
+        
     //private:
     public:
-    boost::shared_ptr<FitsAttr> attr;
-    boost::shared_ptr<std::vector<FitsDim> > dims;
-    int pCount;
-    int gCount;
+    boost::shared_ptr<FitsAttr> _attr;
+    boost::shared_ptr<DimVector> _dims;
+    int _pCount;
+    int _gCount;
+    std::string _fName;
 };
 
 #endif // LOADER_FITSARRAY_HH
