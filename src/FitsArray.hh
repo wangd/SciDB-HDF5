@@ -6,18 +6,8 @@
 
 class FitsAttr {
 public:
-    FitsAttr(int bitPix, double scale_, double zero_) 
-        : scale(scale_), zero(zero_) {
-        assert(bitPix != 0);
-        if(bitPix > 0) {
-            byteSize = bitPix / 8;
-            hasSign = (zero != (1 <<(bitPix-1)));
-        } else {
-            byteSize = -bitPix / 8;
-            hasSign = true;
-            floating = true;
-        }
-    }
+    FitsAttr(int bitPix_, double scale_, double zero_);
+    int bitPix;
     int byteSize;
     double scale;
     double zero;
@@ -39,7 +29,7 @@ public:
     static void dbgCheckArrays(std::string const& fName);
     
 private:
-    void _build(CCfits::HDU const& hdu); 
+    void _build(CCfits::HDU& hdu); // non-const: reading is non-const.
         
     //private:
     public:
