@@ -5,6 +5,7 @@
 
 
 #include <CCfits/CCfits> // Temporary
+#include "FitsArray.hh"
 using CCfits::FITS;
 using CCfits::Read;
 using CCfits::ExtHDU;
@@ -14,6 +15,8 @@ using CCfits::PHDU;
 struct FitsFixture {
 
     FitsFixture() :defaultFitsFile("S11.fits") {}
+    ~FitsFixture() {}
+
 
     void checkHeader(std::string const& fName) {        
         // Construct FITS ref object, read-only
@@ -38,15 +41,53 @@ struct FitsFixture {
                 eh.readAllKeys();
                 std::cout << "extHDU(" << i << ") with " << eh.axes()
                           << " axes" << std::endl;
+                readDesc(eh);
             }
         } catch(CCfits::FitsException& fe) {
             // Assume we hit the end of the extensions.
-            std::cout << "exception " << fe.message() << std::endl;
         }
         
     }
 
-    ~FitsFixture() {}
+    void readDesc(CCfits::ExtHDU& eh) {
+        int bitpix = eh.bitpix();
+        double scale = eh.scale();
+        double zero = eh.zero();
+
+        std::cout << "bitpixel:" << bitpix;
+        assert(bitpix != 0);
+        if(bitpix > 0) {
+            std::cout << " (int" << bitpix;
+            if(zero == (1 <<(bitpix-1))) {
+                std::cout << " unsigned)";
+            } else {
+                std::cout << ")";
+            }
+            
+        } else { // bitpix < 0: float
+            switch(bitpix) {
+                case -64:
+                    std::cout << " (double)";
+                    break;
+                case -32:
+                    std::cout << " (float)";
+                    break;
+                default:
+                    std::cout << " (unsup.float)";
+                    break;
+                }
+        }
+        std::cout << " scale: " << scale
+                  << " zeroOff: " << zero;
+
+        std::cout << " axes: " << eh.axes();
+        for(int i=0; i < eh.axes(); ++i) {
+            std::cout << " axis(" << i << "): " << eh.axis(i);
+        }
+        std::cout << std::endl;
+    }
+
+    
 
     std::string const defaultFitsFile;
 };
