@@ -4,6 +4,56 @@
 // Local helpers
 ////////////////////////////////////////////////////////////////////////
 namespace {
+#if 0
+    // @return the CFITSIO datatype for the given attribute.
+    // Attribute is one of: TBYTE, TSBYTE, TSHORT, TUSHORT, TINT,
+    // TUINT, TLONG, TLONGLONG, TULONG, TFLOAT, TDOUBLE  
+    int fitsDatatype(FitsAttr const& a) {
+        if(a.floating) {
+            switch(a.bitPix) {
+            case -32:
+                return TFLOAT;
+            case -64:
+                return TDOUBLE;
+            default:
+                return TDOUBLE; // Don't know what else to do.
+            }
+        } else {
+            switch(a.byteSize) {
+            case 1: 
+                if(hasSign) return TSBYTE;
+                else return TBYTE;
+            case 2: // ???
+                if(hasSign) return TSHORT;
+                else return TUSHORT;
+            case 4: // ???
+                if(hasSign) return TINT;
+                else return TUINT;
+            case 8:
+                return TLONGLONG;
+                
+            }
+        }
+    }
+#endif
+
+    template<typename T>
+    void* dumpArray(CCfits::HDU& hdu, 
+                    FitsArray::Size numElems, void* buffer) {
+        std::valarray<T> contents;
+        if(hdu.index() == 0) {
+            CCfits::PHDU* phdu = dynamic_cast<CCfits::PHDU*>(&hdu);
+            assert(phdu);
+            phdu->read(contents, 0, numElems);
+        } else {
+            CCfits::ExtHDU* ehdu = dynamic_cast<CCfits::ExtHDU*>(&hdu);
+            assert(ehdu);
+            ehdu->read(contents, 0, numElems); 
+        }
+        // FIXME: Is there a better way to extract from a valarray?
+        return memcpy(buffer, &contents[0], contents.size() * sizeof(T));
+    }
+    
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -35,15 +85,24 @@ FitsAttr::FitsAttr(int bitPix_, double scale_, double zero_)
 // FitsArray public:
 ////////////////////////////////////////////////////////////////////////
 FitsArray::FitsArray(std::string const& fName, int hduNum) {
-    std::auto_ptr<CCfits::FITS> infile(new CCfits::FITS(fName, 
-                                                        CCfits::Read));
-    assert(infile.get());
+    _fits.reset(new CCfits::FITS(fName, CCfits::Read));
+    assert(_fits.get());
     if(hduNum == 0) {
-        _build(infile->pHDU());
+        _build(_fits->pHDU());
     } else {
-        _build(infile->extension(hduNum));
+        _build(_fits->extension(hduNum));
     }        
 }
+
+FitsArray::Size FitsArray::elementCount() const {
+    return std::accumulate(_dims->begin(), _dims->end(), 
+                           1, std::multiplies<Size>());
+}
+
+FitsArray::Size FitsArray::footprint() const {
+    return _attr->byteSize * _gCount * (elementCount() + _pCount);
+}
+
 
 ////////////////////////////////////////////////////////////////////////
 // public debugging
@@ -92,6 +151,50 @@ void FitsArray::dbgCheckArrays(std::string const& fName) {
         // Assume we hit the end of the extensions.
     }        
 }
+
+void FitsArray::dbgDumpArray(std::string const& fName,
+                             int hduNum, int numElems, void* buffer) {
+    FitsArray fa(fName, hduNum);
+    CCfits::HDU* hdu;
+    if(hduNum) hdu = &fa._fits->extension(hduNum);
+    hdu = &fa._fits->pHDU();
+
+    FitsAttr const& attr = *fa._attr;
+    switch(attr.byteSize) {
+    case 1:
+        assert(!attr.floating); // no 8-bit floats
+        if(attr.hasSign) dumpArray<char>(*hdu, numElems, buffer);
+        else dumpArray<unsigned char>(*hdu, numElems, buffer);
+        break;
+    case 2:
+        assert(!attr.floating); // no 16-bit floats
+        if(attr.hasSign) dumpArray<int16_t>(*hdu, numElems, buffer);
+        else dumpArray<uint16_t>(*hdu, numElems, buffer);
+        break;
+    case 4:
+        if(attr.floating) dumpArray<float>(*hdu, numElems, buffer);
+        else if(attr.hasSign) dumpArray<int32_t>(*hdu, numElems, buffer);
+        else dumpArray<uint32_t>(*hdu, numElems, buffer);
+        break;
+    case 8:
+        if(attr.floating) dumpArray<double>(*hdu, numElems, buffer);
+        else if(attr.hasSign) dumpArray<int64_t>(*hdu, numElems, buffer);
+        else dumpArray<uint64_t>(*hdu, numElems, buffer);
+        break;
+        // FIXME: No support for long double (128bit/16-byte floating)
+    default:
+        bool valid_bytes_per_size = false;
+        assert(valid_bytes_per_size); // error.
+        break;
+    }
+    
+#if 0
+    int fits_read_pix / ffgpxv
+        (fitsfile *fptr, int  datatype, long *fpixel, LONGLONG nelements,
+       DTYPE *nulval, > DTYPE *array, int *anynul, int *status)
+#endif
+}
+
 
 ////////////////////////////////////////////////////////////////////////
 // private:
