@@ -4,6 +4,11 @@
 #include <CCfits/CCfits> 
 #include <boost/shared_ptr.hpp>
 
+// Forward:
+namespace scidb {
+    class ArrayDesc;
+}
+
 class FitsAttr {
 public:
     FitsAttr(int bitPix_, double scale_, double zero_);
@@ -28,6 +33,10 @@ public:
 
     Size elementCount() const;
     Size footprint() const;
+
+    boost::shared_ptr<scidb::ArrayDesc> arrayDesc() const;
+
+
     static void dbgCheckHeader(std::string const& fName);
     static void dbgCheckArrays(std::string const& fName);
     static void dbgDumpArray(std::string const& fName,
