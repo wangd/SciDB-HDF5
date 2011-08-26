@@ -49,7 +49,7 @@ H5Array::ScidbIface::getArrayDesc(H5Array const& h) {
     std::string name("Unknown");
     scidb::Attributes sAtts;
     scidb::Dimensions sDims;
-    convertInto(sAtts, *h.getScidbAttrs());
-    convertInto(sDims, *h.getScidbDims());
+    convertInto(sAtts, *h.scidbAttrs());
+    convertInto(sDims, *h.scidbDims());
     return boost::make_shared<scidb::ArrayDesc>(name,sAtts,sDims); 
 }

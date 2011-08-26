@@ -56,6 +56,12 @@ namespace {
             return d.chunkLength;  // This isn't quite right.
         }
     };
+
+    SdlVectorPtr convert(DimVectorPtr dp) {
+        SdlVectorPtr v(new SdlVector(dp->size()));
+        transform(dp->begin(), dp->end(), v->begin(), toScidbLite());
+        return v;
+    }
     
 }
 
@@ -404,7 +410,7 @@ H5Array::SlabIter::SlabIter(H5Array const& ha, bool makeEnd)
 
 /// @return size of attribute #attNo in bytes.
 H5Array::Size H5Array::SlabIter::slabAttrSize(int attNo) const {    
-    Size s = getCount(attNo, false);
+    Size s = elementCount(attNo, false);
     // Apply datatype size.
     AttrVectorPtr ap = _ha._ds->getAttrs();
     AttrVector& a = *ap;
@@ -493,7 +499,7 @@ void* H5Array::SlabIter::readInto(int attNo, void* buffer) {
 // Find non-empty members in this slab. 
 // Always equal to slab extent, since everything is non-empty.
 // ...except when array edge is not on a chunk boundary.
-H5Array::Size  H5Array::SlabIter::getCount(int attNo, bool clipEdges) const {
+H5Array::Size  H5Array::SlabIter::elementCount(int attNo, bool clipEdges) const {
     DimVectorPtr dp = _ha._ds->getDims();
     DimVector& d = *dp;
     Size s = 1;
@@ -530,13 +536,11 @@ H5Array::H5Array(std::string const& fPath, std::string const& path)
                    extractIncr());
 }
 
-SdlVectorPtr convert(DimVectorPtr dp) {
-    SdlVectorPtr v(new SdlVector(dp->size()));
-    transform(dp->begin(), dp->end(), v->begin(), toScidbLite());
-    return v;
+boost::shared_ptr<scidb::ArrayDesc> H5Array::arrayDesc() const {
+    return ScidbIface::getArrayDesc(*this);
 }
 
-SalVectorPtr H5Array::getScidbAttrs() const {
+SalVectorPtr H5Array::scidbAttrs() const {
     assert(_ds.get());
     AttrVectorPtr attrs = _ds->getAttrs();
     SalVectorPtr v(new SalVector(attrs->size()));
@@ -545,12 +549,7 @@ SalVectorPtr H5Array::getScidbAttrs() const {
     
 }
 
-boost::shared_ptr<scidb::ArrayDesc> H5Array::getArrayDesc() const {
-    return ScidbIface::getArrayDesc(*this);
-}
-
-
-SdlVectorPtr H5Array::getScidbDims() const {
+SdlVectorPtr H5Array::scidbDims() const {
     assert(_ds);
     DimVectorPtr dims = _ds->getDims();
     assert(dims);
@@ -559,19 +558,19 @@ SdlVectorPtr H5Array::getScidbDims() const {
     return v;
 }
 
-int H5Array::getSlabCount() const {
+int H5Array::slabCount() const {
     // Perform "dimensional arithmetic" and divide the dimensional
     // extents by the chunk increment using long division and rounding
     // up if we have a remainder. 
     return 1; // FIXME
 }
 
-int H5Array::getRank() const {
+int H5Array::rank() const {
     return _ds->getDims()->size();
 }
 
-int  H5Array::getAttrCount() const {
-        return _ds->getAttrs()->size();
+int  H5Array::attrCount() const {
+    return _ds->getAttrs()->size();
 }
 
 void H5Array::_imposeChunking(SdlVectorPtr dims) const {

@@ -9,7 +9,7 @@
 #include "array/DBArray.h"
 // pkg
 #include "H5Array.hh"
-#include "scidbConvert.hh"
+#include "loadUtils.hh"
 
 namespace {
     class Copier {
@@ -38,7 +38,7 @@ namespace {
             // std::cout << "writing to buffer at " 
             //           << (void*) outChunk.getData() << std::endl;
             si.readInto(attNo, outChunk.getData());
-            outChunk.setCount(si.getCount(attNo, true));
+            outChunk.setCount(si.elementCount(attNo, true));
             outChunk.write();
         }
     private:
@@ -53,23 +53,12 @@ void loadHdf(std::string const& filePath,
              std::string const& arrayName) {
     std::string resultName = arrayName;
 
-    // Do something good.
     H5Array ha(filePath, hdfPath);
 
     std::cout << "Retrieving descriptor for " << filePath << " --> " 
               << hdfPath << std::endl;
-    boost::shared_ptr<scidb::ArrayDesc> dptr(ha.getArrayDesc());
-    dptr->setName(arrayName);
-    std::cout << "Set array name. Getting catalog instance." << std::endl;
-    scidb::SystemCatalog& catalog = *scidb::SystemCatalog::getInstance();
-
-    if(catalog.containsArray(arrayName)) { // delete if existing.
-        catalog.deleteArray(arrayName);
-    }
-
-    // Get array id; hardcode partitioning scheme for now.
-    scidb::ArrayID aid = catalog.addArray(*dptr, scidb::psLocalNode); 
-    Copier copier(aid, ha.getAttrCount());
+    scidb::ArrayID aid = scidbCreateArray(arrayName, *ha.arrayDesc());
+    Copier copier(aid, ha.attrCount());
     
     std::cout << "Added array to catalog and contructed dbarray." 
               << std::endl; 

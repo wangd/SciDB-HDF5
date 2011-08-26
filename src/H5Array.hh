@@ -44,7 +44,7 @@ public:
         Size slabAttrSize(int attNo) const;
         void* readInto(int attNo, void* buffer);
         void* readSlabInto(void* buffer);
-        Size getCount(int attNo, bool clipEdges) const;
+        Size elementCount(int attNo, bool clipEdges) const;
         friend std::ostream& operator<<(std::ostream& os, SlabIter const& i);
 
     private:
@@ -73,12 +73,12 @@ public:
 
     H5Array(std::string const& fPath, std::string const& path);
 
-    boost::shared_ptr<scidb::ArrayDesc> getArrayDesc() const;
-    int getSlabCount() const;
-    int getRank() const;
-    SalVectorPtr getScidbAttrs() const;
-    SdlVectorPtr getScidbDims() const;
-    int getAttrCount() const;
+    boost::shared_ptr<scidb::ArrayDesc> arrayDesc() const;
+    int slabCount() const;
+    int rank() const;
+    SalVectorPtr scidbAttrs() const;
+    SdlVectorPtr scidbDims() const;
+    int attrCount() const;
 
     SlabIter begin() { return SlabIter(*this); }
     SlabIter end() { return SlabIter(*this, true); }

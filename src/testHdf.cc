@@ -21,12 +21,12 @@ BOOST_AUTO_TEST_CASE(testH5Array) {
 
 BOOST_AUTO_TEST_CASE(checkDesc) {
     H5Array h(fName, path);
-    SalVectorPtr sal = h.getScidbAttrs();
+    SalVectorPtr sal = h.scidbAttrs();
     std::cout << "Checking descriptor for file:" << fName << " on path "
               << path << std::endl;
     std::copy(sal->begin(), sal->end(), 
               std::ostream_iterator<ScidbAttrLite>(std::cout, " "));
-    SdlVectorPtr sdl = h.getScidbDims();
+    SdlVectorPtr sdl = h.scidbDims();
     std::copy(sdl->begin(), sdl->end(), 
               std::ostream_iterator<ScidbDimLite>(std::cout, " "));
     std::cout << "done." << std::endl;
@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(CheckCompoundRead) {
     int count =0;
     boost::shared_array<char> buffer;
     uint64_t bufSize = 0;
-    SalVectorPtr ap = h.getScidbAttrs();
+    SalVectorPtr ap = h.scidbAttrs();
     int attCount = ap->size();
     for(H5Array::SlabIter slabi = h.begin(); slabi != h.end(); ++slabi) {
         ++count;
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(CheckCompoundRead) {
             for(int i=0; i < 10; ++i) {
                 std::cout << ((int*)buffer.get())[i] << " ";
             } 
-            std::cout << " Count=" << slabi.getCount(attNo, true)
+            std::cout << " Count=" << slabi.elementCount(attNo, true)
                       << std::endl;
         }
     }

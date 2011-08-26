@@ -35,7 +35,7 @@ target_link_libraries(loader ${HDF5_LIBRARIES})
 
 # SciDb plugin
 set(plugin_src plugin.cc loadOperator.cc H5Array.cc H5Array_Scidb.cc
-  arrayCommon.cc)
+  loadUtils.cc arrayCommon.cc)
 add_library(loadhdf SHARED ${plugin_src})
 target_link_libraries(loadhdf ${HDF5_LIBRARIES})
 
@@ -44,7 +44,7 @@ find_package(Cfitsio)
 if(CCFITS_FOUND)
   message("FITS loader enabled")
   set(fitsplugin_src fitsPlugin.cc fitsOperator.cc FitsArray.cc 
-    FitsArray_Scidb.cc)
+    FitsArray_Scidb.cc loadUtils.cc)
   add_library(loadfits SHARED ${fitsplugin_src})
   target_link_libraries(loadfits ${CCFITS_LIBARY} ${CFITSIO_LIBRARY})
 else(CCFITS_FOUND)
