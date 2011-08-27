@@ -84,7 +84,8 @@ FitsAttr::FitsAttr(int bitPix_, double scale_, double zero_)
 ////////////////////////////////////////////////////////////////////////
 // FitsArray public:
 ////////////////////////////////////////////////////////////////////////
-FitsArray::FitsArray(std::string const& fName, int hduNum) {
+FitsArray::FitsArray(std::string const& fName, int hduNum) 
+    :_hduNum(hduNum) {
     _fits.reset(new CCfits::FITS(fName, CCfits::Read));
     assert(_fits.get());
     if(hduNum == 0) {
@@ -94,6 +95,10 @@ FitsArray::FitsArray(std::string const& fName, int hduNum) {
     }        
 }
 
+int FitsArray::rank() const {
+    return _dims->size();
+}
+
 FitsArray::Size FitsArray::elementCount() const {
     return std::accumulate(_dims->begin(), _dims->end(), 
                            1, std::multiplies<Size>());
@@ -101,6 +106,41 @@ FitsArray::Size FitsArray::elementCount() const {
 
 FitsArray::Size FitsArray::footprint() const {
     return _attr->byteSize * _gCount * (elementCount() + _pCount);
+}
+
+void FitsArray::copyArray(void* buffer, int64_t numElems) {
+    CCfits::HDU* hdu;
+    if(_hduNum) hdu = &_fits->extension(_hduNum);
+    else hdu = &_fits->pHDU();
+
+    FitsAttr const& attr = *_attr;
+    switch(attr.byteSize) {
+    case 1:
+        assert(!attr.floating); // no 8-bit floats
+        if(attr.hasSign) dumpArray<char>(*hdu, numElems, buffer);
+        else dumpArray<unsigned char>(*hdu, numElems, buffer);
+        break;
+    case 2:
+        assert(!attr.floating); // no 16-bit floats
+        if(attr.hasSign) dumpArray<int16_t>(*hdu, numElems, buffer);
+        else dumpArray<uint16_t>(*hdu, numElems, buffer);
+        break;
+    case 4:
+        if(attr.floating) dumpArray<float>(*hdu, numElems, buffer);
+        else if(attr.hasSign) dumpArray<int32_t>(*hdu, numElems, buffer);
+        else dumpArray<uint32_t>(*hdu, numElems, buffer);
+        break;
+    case 8:
+        if(attr.floating) dumpArray<double>(*hdu, numElems, buffer);
+        else if(attr.hasSign) dumpArray<int64_t>(*hdu, numElems, buffer);
+        else dumpArray<uint64_t>(*hdu, numElems, buffer);
+        break;
+        // FIXME: No support for long double (128bit/16-byte floating)
+    default:
+        bool valid_bytes_per_size = false;
+        assert(valid_bytes_per_size); // error.
+        break;
+    }    
 }
 
 
@@ -155,44 +195,7 @@ void FitsArray::dbgCheckArrays(std::string const& fName) {
 void FitsArray::dbgDumpArray(std::string const& fName,
                              int hduNum, int numElems, void* buffer) {
     FitsArray fa(fName, hduNum);
-    CCfits::HDU* hdu;
-    if(hduNum) hdu = &fa._fits->extension(hduNum);
-    hdu = &fa._fits->pHDU();
-
-    FitsAttr const& attr = *fa._attr;
-    switch(attr.byteSize) {
-    case 1:
-        assert(!attr.floating); // no 8-bit floats
-        if(attr.hasSign) dumpArray<char>(*hdu, numElems, buffer);
-        else dumpArray<unsigned char>(*hdu, numElems, buffer);
-        break;
-    case 2:
-        assert(!attr.floating); // no 16-bit floats
-        if(attr.hasSign) dumpArray<int16_t>(*hdu, numElems, buffer);
-        else dumpArray<uint16_t>(*hdu, numElems, buffer);
-        break;
-    case 4:
-        if(attr.floating) dumpArray<float>(*hdu, numElems, buffer);
-        else if(attr.hasSign) dumpArray<int32_t>(*hdu, numElems, buffer);
-        else dumpArray<uint32_t>(*hdu, numElems, buffer);
-        break;
-    case 8:
-        if(attr.floating) dumpArray<double>(*hdu, numElems, buffer);
-        else if(attr.hasSign) dumpArray<int64_t>(*hdu, numElems, buffer);
-        else dumpArray<uint64_t>(*hdu, numElems, buffer);
-        break;
-        // FIXME: No support for long double (128bit/16-byte floating)
-    default:
-        bool valid_bytes_per_size = false;
-        assert(valid_bytes_per_size); // error.
-        break;
-    }
-    
-#if 0
-    int fits_read_pix / ffgpxv
-        (fitsfile *fptr, int  datatype, long *fpixel, LONGLONG nelements,
-       DTYPE *nulval, > DTYPE *array, int *anynul, int *status)
-#endif
+    fa.copyArray(buffer, numElems);
 }
 
 

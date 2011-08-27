@@ -12,39 +12,25 @@
 #include "loadUtils.hh"
 
 namespace {
-    class Copier {
+    class H5SlabSource : public ScidbArrayCopier::Source {
     public:
-        Copier(scidb::ArrayID& arrayId, int attrCount)
-            : _array(arrayId), _attrCount(attrCount) {
-            // Nothing for now.
+        H5SlabSource(H5Array::SlabIter& si) : _si(si) {}
+        virtual scidb::Coordinates const& coords() const {
+            return *_si;
         }
-
-        void copyChunks(H5Array::SlabIter& si) {
-            for(int i=0; i < _attrCount; ++i) {
-                copyChunk(si, i);
-            }
+        virtual Size footprint(int attNo) const { 
+            return _si.slabAttrSize(attNo);
         }
-        void copyChunk(H5Array::SlabIter& si,
-                       int attNo) {
-            // Not sure about coordinate order. HDF: minor precedes major.
-            scidb::Coordinates const& coords = *si; 
-            boost::shared_ptr<scidb::ArrayIterator> ai;
-            ai = _array.getIterator(attNo);
-            scidb::Chunk& outChunk = ai->newChunk(coords);
-
-            outChunk.allocate(si.slabAttrSize(attNo));
-            outChunk.setSparse(false); // Never sparse
-            // scidb::Chunk* outChunkPtr = &outChunk;
-            // std::cout << "writing to buffer at " 
-            //           << (void*) outChunk.getData() << std::endl;
-            si.readInto(attNo, outChunk.getData());
-            outChunk.setCount(si.elementCount(attNo, true));
-            outChunk.write();
+        virtual Size elementCount(int attNo, bool clip) const { 
+            return _si.elementCount(attNo, clip);
+        }
+        virtual void copy(int attNo, void* target) {
+            _si.readInto(attNo, target);
         }
     private:
-        scidb::DBArray _array;
-        int _attrCount;
+        H5Array::SlabIter& _si;
     };
+
 }
 
 
@@ -58,7 +44,7 @@ void loadHdf(std::string const& filePath,
     std::cout << "Retrieving descriptor for " << filePath << " --> " 
               << hdfPath << std::endl;
     scidb::ArrayID aid = scidbCreateArray(arrayName, *ha.arrayDesc());
-    Copier copier(aid, ha.attrCount());
+    ScidbArrayCopier copier(aid, ha.attrCount());
     
     std::cout << "Added array to catalog and contructed dbarray." 
               << std::endl; 
@@ -69,7 +55,8 @@ void loadHdf(std::string const& filePath,
     for(H5Array::SlabIter i = ha.begin();
         i != ha.end(); ++i) {
         std::cout << i << std::endl;
-        copier.copyChunks(i);
+        H5SlabSource t(i);
+        copier.copyChunks(t);
     }
     
     // Fill results

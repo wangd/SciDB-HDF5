@@ -31,8 +31,10 @@ public:
     // hduNum: 0 = primary HDU, 1+: extension HDU #
     FitsArray(std::string const& fName, int hduNum);
 
+    int rank() const;
     Size elementCount() const;
     Size footprint() const;
+    void copyArray(void* buffer, int64_t numElems);
 
     boost::shared_ptr<scidb::ArrayDesc> arrayDesc() const;
 
@@ -47,6 +49,7 @@ private:
         
     //private:
     public:
+    int _hduNum;
     boost::shared_ptr<CCfits::FITS> _fits;
     boost::shared_ptr<FitsAttr> _attr;
     boost::shared_ptr<DimVector> _dims;
