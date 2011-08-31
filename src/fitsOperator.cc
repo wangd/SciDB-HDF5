@@ -38,10 +38,20 @@ void loadFits(std::string const& filePath,
     std::string resultName = arrayName;
 
     // Do something good.
+    std::cout << "loadFits invoked with file=" << filePath
+              << " hdu=" << hduNumber << " targetArray=" << arrayName 
+              << std::endl;
     FitsArray fa(filePath, hduNumber);
+    std::cout << "Constructed FitsArray(" << filePath << ", " 
+              << hduNumber << ")\n";
     scidb::ArrayID aid = scidbCreateArray(arrayName, *fa.arrayDesc());
-    
+    std::cout << "Created array(" << arrayName << std::endl;
+
     ScidbArrayCopier copier(aid, 1);
+    std::cout << "Prepared copier" << std::endl;
     FitsSource f(fa);
+    std::cout << "Prepared fitsSource" << std::endl;
+
     copier.copyChunk(0, f);
+    std::cout << "Copied chunk." << std::endl;
 }

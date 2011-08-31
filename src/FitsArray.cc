@@ -1,5 +1,6 @@
 #include "FitsArray.hh"
 #include <cmath>
+#include <CCfits/FITSUtil.h>
 ////////////////////////////////////////////////////////////////////////
 // Local helpers
 ////////////////////////////////////////////////////////////////////////
@@ -41,14 +42,14 @@ namespace {
     void* dumpArray(CCfits::HDU& hdu, 
                     FitsArray::Size numElems, void* buffer) {
         std::valarray<T> contents;
-        if(hdu.index() == 0) {
+        if(hdu.index() == 0) { // Check index for safe cast
             CCfits::PHDU* phdu = dynamic_cast<CCfits::PHDU*>(&hdu);
             assert(phdu);
-            phdu->read(contents, 0, numElems);
-        } else {
+            phdu->read(contents, 1, numElems);
+        } else { 
             CCfits::ExtHDU* ehdu = dynamic_cast<CCfits::ExtHDU*>(&hdu);
             assert(ehdu);
-            ehdu->read(contents, 0, numElems); 
+            ehdu->read(contents, 1, numElems); 
         }
         // FIXME: Is there a better way to extract from a valarray?
         return memcpy(buffer, &contents[0], contents.size() * sizeof(T));
