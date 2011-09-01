@@ -26,7 +26,10 @@ include_directories(${HDF5_INCLUDE_DIR} ${SCIDB_INCLUDES} ${Boost_INCLUDE_DIRS})
 
 # SciDB special flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SCIDB_CXX_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -rdynamic")
+
+
+
 
 
 # file dumper
@@ -44,9 +47,10 @@ find_package(Cfitsio)
 if(CCFITS_FOUND)
   message("FITS loader enabled")
   set(fitsplugin_src fitsPlugin.cc fitsOperator.cc FitsArray.cc 
-    FitsArray_Scidb.cc loadUtils.cc)
+    FitsArray_Scidb.cc loadUtils.cc arrayCommon.cc)
   add_library(loadfits SHARED ${fitsplugin_src})
-  target_link_libraries(loadfits ${CCFITS_LIBARY} ${CFITSIO_LIBRARY})
+
+  target_link_libraries(loadfits ${CCFITS_LIBRARY})
 else(CCFITS_FOUND)
   message("Disabling FITS loader")
 endif(CCFITS_FOUND)
@@ -79,7 +83,7 @@ target_link_libraries(testHdf ${HDF5_LIBRARIES})
 ## FITS
 include_directories(${CCFITS_INCLUDE} )
 add_executable(testFits testFits.cc FitsArray.cc)
-target_link_libraries(testFits ${CFITSIO_LIBRARY} ${CCFITS_LIBRARY})
+target_link_libraries(testFits ${CCFITS_LIBRARY} ${CFITSIO_LIBRARY})
 
 
 #include(FeatureSummary)
