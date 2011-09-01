@@ -33,8 +33,8 @@ public:
     LogicalLoadFits(const std::string& logicalName, const std::string& alias)
         : scidb::LogicalOperator(logicalName, alias) {
         ADD_PARAM_CONSTANT("string"); // FITS file
-        ADD_PARAM_CONSTANT("int32"); // HDU number (1=first image)
         ADD_PARAM_CONSTANT("string"); // Target array
+        ADD_PARAM_CONSTANT("int32"); // HDU number (1=first image)
         // No initialization needed.
     }
     virtual ~LogicalLoadFits() {}
