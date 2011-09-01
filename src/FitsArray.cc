@@ -186,6 +186,7 @@ void FitsArray::dbgCheckArrays(std::string const& fName) {
             std::cout << " array in dims: ";
             std::copy(fa._dims->begin(), fa._dims->end(), 
                       std::ostream_iterator<FitsDim>(std::cout, ", "));
+            std::cout << "  footprint=" << fa.footprint();
             std::cout << std::endl;
         } // each hdu
     } catch(CCfits::FitsException& fe) {

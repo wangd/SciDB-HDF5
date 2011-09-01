@@ -5,6 +5,9 @@
 #include "arrayCommon.hh"
 
 namespace {
+    ////////////////////////////////////////////////////////////////////
+    // Conversion for dimensions
+    ////////////////////////////////////////////////////////////////////
     class dimConvert {
     public:
         dimConvert() : dimNum(0) {}
@@ -36,17 +39,43 @@ namespace {
         std::transform(dims.begin(), dims.end(), 
                            std::back_inserter(sDims), dimConvert());
     }
-    
+    ////////////////////////////////////////////////////////////////////
+    // Conversion for attributes
+    ////////////////////////////////////////////////////////////////////
+    scidb::TypeId mapToScidb(FitsAttr const& attr) {
+        switch(attr.byteSize) {
+        case 1:
+            assert(!attr.floating);
+            if(attr.hasSign) return scidb::TID_INT8;
+            else return scidb::TID_UINT8;
+        case 2:
+            assert(!attr.floating);
+            if(attr.hasSign) return scidb::TID_INT16;
+            else return scidb::TID_UINT16;
+        case 4:
+            if(attr.floating) return scidb::TID_FLOAT;
+            else if(attr.hasSign) return scidb::TID_INT32;
+            else return scidb::TID_UINT32;
+        case 8:
+            if(attr.floating) return scidb::TID_DOUBLE;
+            else if(attr.hasSign) return scidb::TID_INT64;
+            else return scidb::TID_UINT64;
+        default:
+            std::cerr << "FitsArray invalid type conversion." << std::endl;
+            return scidb::TID_UINT64; // Is this the right thing?
+        }
+    }
 }
 
 boost::shared_ptr<scidb::ArrayDesc> FitsArray::arrayDesc() const {
     scidb::Attributes sAtts;
     scidb::Dimensions sDims;
-    std::string unknown("unknown");
-    // Need to map scidb typeid.
+    // Consider using something from the FITS metadata.
+    std::string unknown("unknown"); 
+    
     sAtts.push_back(scidb::AttributeDesc(0, // Blank attribute id.
                                          unknown, 
-                                         SCIDB_TID_INT64, // FIXME
+                                         mapToScidb(*_attr),
                                          0, // Flags
                                          0 // default compression method
                                          ));

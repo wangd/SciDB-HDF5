@@ -33,6 +33,7 @@ void ScidbArrayCopier::copyChunk(int attNo, Source& source) {
     boost::shared_ptr<scidb::ArrayIterator> ai;
     ai = _array->getIterator(attNo);
     scidb::Chunk& outChunk = ai->newChunk(coords);
+    //std::cout << "chunk footprint=" << source.footprint(attNo) << std::endl;
     outChunk.allocate(source.footprint(attNo));
     outChunk.setSparse(false); // Never sparse
     source.copy(attNo, outChunk.getData());
