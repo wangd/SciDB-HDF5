@@ -1,5 +1,7 @@
 History file for SciDB-HDF5
 ===========================
+2011-09-01 Version 0.4.1: Fixed FITS plugin by implementing proper
+           type mapping that was previously overlooked.
 2011-08-31 Version 0.4: Added FITS loading plugin. 
            Somewhat broken: loaded array crashes SciDB at some point.
 2011-08-10 Version 0.3: Added capability to load arrays of simple
