@@ -1,4 +1,10 @@
 SciDB-HDF5
+----------
+The SciDB-HDF5 project was designed to allow scientists to load their
+array data from HDF5 (now FITS as well) files into SciDB.  While full
+functionality is not promised, we have used the code to load large 1D,
+2D, and 3D arrays and manipulate them using SciDB.
+
 
 Quick notes
 -----------
@@ -7,6 +13,7 @@ Prerequisites:
 A checkout of SciDB  -- scidb.org/download
 CMake -- www.cmake.org
 HDF5 libraries and headers (e.g., yum install hdf5 hdf5-devel)
+CFITSIO and CCfits (for FITS functionality)
 
 RHEL5 RPMS for HDF5 are available at: 
 http://www.slac.stanford.edu/~danielw/hdf/
@@ -34,10 +41,40 @@ The "libloadhdf.so" is a shared library designed to be a scidb plugin.
 You can install it by copying it from the src/ directory to your SciDB
 installation's plugins directory (ROOT/lib/scidb/plugins)
 
+The "libloadfits.so" is a shared library designed to be a scidb
+plugin.  It can be installed similarly to the other plugin.
+
+
 Status
 ------
-The SciDB-HDF5 is alpha-level code. It functions under some conditions
-but needs substantial development to handle more general usage.
+SciDB-HDF5 is beta-level code. It functions under some conditions
+but may need development to handle more general usage.  It does not
+contain known memory leaks or scalability problems, but has not
+undergone extensive testing.  
+
+FITS tables are not currently supported, since they do not have natural
+counterparts in SciDB.
+
+
+AFL function signatures:
+------------------------
+libloadhdf.so:
+void loadhdf(<target array name>, <full path of HDF5 file>, 
+             <path to array within file>)
+
+libloadfits.so:
+void loadhdf(<target array name>, <full path of FITS file>, 
+             <HDU number>)
+
+Both functions overwrite the target specified array, which is deleted
+if necessary and constructed with a shape and form according to the
+source array's original shape.
+
+
+Operating notes
+---------------
+The code automatically maps a 1D array of 2D images into a single 3D
+array, as this was the best behavior for the original use case.
 
 
 Trying out the loader:
@@ -66,6 +103,19 @@ iquery -aq "loadhdf('imagetime', '/u24/ldrd/sxrcom10-r0232.h5',
 iquery -aq "show(imagetime);"
 [("imagetime<seconds:uint32 NOT NULL,nanoseconds:uint32 NOT NULL> [unnamed0=0:9223372036854775807,42247,0]")]
 
+### FITS loader examples:
+
+## Load the plugin and the fits file
+iquery -aq "load_library('loadfits');"
+iquery -aq "loadfits('s20fits', '/u24/danielw/testdata/S20.fits',1);"
+
+## See what we loaded
+iquery -aq "show(s20fits);"
+[("s20fits<unknown:float NOT NULL> [dim0=0:4072,4072,0,dim1=0:4000,4000,0]")]
+
+## Compute an average
+iquery -aq "avg(s20fits);"
+[(5.21866)]
 
 
 Notes:
