@@ -1,4 +1,0 @@
-#!/bin/sh
-
-./hdf5-1.8.5-patch1-linux-x86_64-static/bin/h5c++ load.cc -o load
-rm load.o
