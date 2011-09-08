@@ -1,6 +1,6 @@
-# -- Check for the HDF5 library --
+# -- Check for CFITSIO and CCFITS library --
 #
-# Uses path overrides: H5INC_PATH and H5LIB_PATH 
+# Uses path overrides: CFITSIOINC_PATH and CFITSIOLIB_PATH 
 #
 # Defines:
 #
