@@ -68,7 +68,7 @@ Attr Attr::makeString(H5::DataType const& dt) {
     a.strPad = obj.getStrpad();
     a.strCset = obj.getCset();
     a.strIsVlstr = H5Tis_variable_str(obj.getId());
-    // FIXME: not sure we need the more complex handling from loader.cc
+    // FIXME: not sure we need the more complex handling from HdfDump.cc
     return a;
 }
 ////////////////////////////////////////////////////////////////////////

@@ -37,6 +37,14 @@ public:
 
 typedef uint32_t FitsDim;
 
+////////////////////////////////////////////////////////////////////////
+// FitsArray - abstraction for reading an array out of a FITS file
+// Unlike H5Array, there is no chunking involved.  FITS files do not
+// have a provision for chunking, and FitsArray does not impose any
+// chunking scheme.  FITS arrays are generally small enough to fit
+// in-memory, probably to accomodate older FITS software, so the lack
+// of chunking should not be a problem to FitsArray clients.
+////////////////////////////////////////////////////////////////////////
 class FitsArray {
 public:
     typedef std::vector<FitsDim> DimVector;

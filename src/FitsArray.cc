@@ -21,39 +21,6 @@
 // Local helpers
 ////////////////////////////////////////////////////////////////////////
 namespace {
-#if 0
-    // @return the CFITSIO datatype for the given attribute.
-    // Attribute is one of: TBYTE, TSBYTE, TSHORT, TUSHORT, TINT,
-    // TUINT, TLONG, TLONGLONG, TULONG, TFLOAT, TDOUBLE  
-    int fitsDatatype(FitsAttr const& a) {
-        if(a.floating) {
-            switch(a.bitPix) {
-            case -32:
-                return TFLOAT;
-            case -64:
-                return TDOUBLE;
-            default:
-                return TDOUBLE; // Don't know what else to do.
-            }
-        } else {
-            switch(a.byteSize) {
-            case 1: 
-                if(hasSign) return TSBYTE;
-                else return TBYTE;
-            case 2: // ???
-                if(hasSign) return TSHORT;
-                else return TUSHORT;
-            case 4: // ???
-                if(hasSign) return TINT;
-                else return TUINT;
-            case 8:
-                return TLONGLONG;
-                
-            }
-        }
-    }
-#endif
-
     template<typename T>
     void* dumpArray(CCfits::HDU& hdu, 
                     FitsArray::Size numElems, void* buffer) {

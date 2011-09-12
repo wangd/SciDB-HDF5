@@ -128,11 +128,6 @@ private:
 };
 
 H5Array::Size H5Array::DataSet::getTypeSize() const {
-#if 0
-    std::cout << "Dataset element size is " 
-              << _h5ds.getDataType().getSize() 
-              << " bytes" << std::endl;
-#endif
     return _h5ds.getDataType().getSize();
 }
 
@@ -178,11 +173,11 @@ void H5Array::DataSet::_readType() {
         break;
     case H5T_INTEGER: // integers
         std::cout << "int" << std::endl;
-        //addAttrIntType(dataSet.getIntType(), "");
+        attrs = _readSimpleType(_h5ds.getIntType());
         break;
     case H5T_FLOAT: // floats
         std::cout << "float" << std::endl;
-        //addAttrFloatType(dataSet.getFloatType(), "");
+        attrs = _readSimpleType(_h5ds.getFloatType());
         break;
     case H5T_TIME: // date and time
     case H5T_STRING: // char string
@@ -573,12 +568,14 @@ SdlVectorPtr H5Array::scidbDims() const {
     return v;
 }
 
+#if 0
 int H5Array::slabCount() const {
     // Perform "dimensional arithmetic" and divide the dimensional
     // extents by the chunk increment using long division and rounding
     // up if we have a remainder. 
     return 1; // FIXME
 }
+#endif
 
 int H5Array::rank() const {
     return _ds->getDims()->size();

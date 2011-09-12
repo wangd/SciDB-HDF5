@@ -89,7 +89,7 @@ public:
     H5Array(std::string const& fPath, std::string const& path);
 
     boost::shared_ptr<scidb::ArrayDesc> arrayDesc() const;
-    int slabCount() const;
+    //int slabCount() const; // Unimplemented.
     int rank() const;
     SalVectorPtr scidbAttrs() const;
     SdlVectorPtr scidbDims() const;
