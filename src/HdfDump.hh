@@ -20,7 +20,7 @@
 #include <vector>
 #include <ostream>
 
-class Loader {
+class HdfDump {
 public:
     typedef H5::ArrayType ArrayType;
     typedef H5::CompType CompType;
@@ -31,7 +31,7 @@ public:
     typedef H5::PredType PredType;
     typedef H5::VarLenType VarLenType;
     
-    explicit Loader(std::string const& filename);
+    explicit HdfDump(std::string const& filename);
     void doOneGroup(const std::string& objName, 
                     H5G_obj_t objType,
                     const std::string& prefix);
@@ -98,8 +98,8 @@ private:
     std::vector< OneAttr > _attr;  // attributes
     std::vector< OneDim > _dim;    // dimensions
     
-    friend std::ostream& operator<<(std::ostream&, const Loader::OneAttr&);
-    friend std::ostream& operator<<(std::ostream&, const Loader::OneDim&);
+    friend std::ostream& operator<<(std::ostream&, const HdfDump::OneAttr&);
+    friend std::ostream& operator<<(std::ostream&, const HdfDump::OneDim&);
 };
 
 #endif // LOADER_HH

@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#include "loader.hh"
+#include "HdfDump.hh"
 #include <unistd.h>
 
 namespace {
@@ -84,14 +84,14 @@ void loadAndPrint(std::string const& filename, std::string const& path) {
     //Exception::dontPrint();
     std::string prefix = "";
 
-    Loader loader(filename);
+    HdfDump hd(filename);
     //loader.doOneGroup("/", H5G_GROUP, prefix, file);
-    loader.doOneGroup(path, H5G_GROUP, prefix);
+    hd.doOneGroup(path, H5G_GROUP, prefix);
     // FIXME: dumping data for flattened arrays
-    //loader.processDataSet("/Configure:0000/Epics::EpicsPv/EpicsArch.0:NoDevice.0/SXR:SPS:MPA:01:IN/data");
+    //hd.processDataSet("/Configure:0000/Epics::EpicsPv/EpicsArch.0:NoDevice.0/SXR:SPS:MPA:01:IN/data");
 
     // FIXME: multi-d arrays
-    //loader.processDataSet("/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1/image");
+    //hd.processDataSet("/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1/image");
 
     // DATASET "image" {
     //    DATATYPE  H5T_ARRAY { [1024][1024] H5T_STD_U16LE }

@@ -27,6 +27,7 @@ namespace scidb {
     class ArrayDesc;
     class DBArray;
 }
+
 // Free functions
 scidb::ArrayID scidbCreateArray(std::string const& arrayName, 
                                 scidb::ArrayDesc& aDesc);

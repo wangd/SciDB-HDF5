@@ -21,7 +21,7 @@
 #include <string.h> // memcpy, memset
 #include <algorithm>
 
-#include "loader.hh"
+#include "HdfDump.hh"
 #include "scidb.hh"
 
 // Namespace import
@@ -30,8 +30,8 @@ using std::endl;
 
 
 
-const int Loader::OneDim::UNLIMITED = -1;
-const int Loader::OneDim::UNKNOWN = -2;
+const int HdfDump::OneDim::UNLIMITED = -1;
+const int HdfDump::OneDim::UNKNOWN = -2;
 
 const char* outFNameSchema = "/tmp/scidbSchema.sql";
 const char* outFNameData   = "/tmp/scidbData.sql";
@@ -76,7 +76,7 @@ namespace {
 
     void printSpaceArrayElem(std::ostream& os,
                              void* buffer, H5::ArrayType const& aType,
-                             uint64_t limit=2000) {
+                             int32_t limit=2000) {
         using H5::ArrayType;
         // Checking dims really should be const.
         int rank = const_cast<ArrayType&>(aType).getArrayNDims();
@@ -156,11 +156,11 @@ namespace {
 // ============================================================================
 
 std::ostream&
-operator<<(std::ostream& os, const Loader::OneAttr& o) {
-    os << "{" << Loader::print_H5T_class_t_Name(o.type)
+operator<<(std::ostream& os, const HdfDump::OneAttr& o) {
+    os << "{" << HdfDump::print_H5T_class_t_Name(o.type)
        << ", tS=" << o.tS 
        << ", tN=" << o.tN 
-       << ", predT=" << Loader::printPredType(*(o.predType)) 
+       << ", predT=" << HdfDump::printPredType(*(o.predType)) 
        << ", inNA=" << o.inNA
        << ", " << o.attrName;
     if ( o.type == H5T_ENUM ) {
@@ -176,14 +176,14 @@ operator<<(std::ostream& os, const Loader::OneAttr& o) {
 // ============================================================================
 
 std::ostream&
-operator<<(std::ostream& os, const Loader::OneDim& o) {
+operator<<(std::ostream& os, const HdfDump::OneDim& o) {
     return os << "[" << o.d1 << ":" << o.d2 << ",n=" << o.curNElems << "]";
 }
 
 // ============================================================================
 // ============================================================================
 
-Loader::Loader(std::string const& filename) 
+HdfDump::HdfDump(std::string const& filename) 
     : _filename(filename), 
       _h5File(filename, H5F_ACC_RDONLY) {
     _attr.clear();
@@ -198,7 +198,7 @@ Loader::Loader(std::string const& filename)
 
 // recursively scan all groups in the file and process all data sets
 void
-Loader::doOneGroup(const std::string& objName, 
+HdfDump::doOneGroup(const std::string& objName, 
                    H5G_obj_t objType, 
                    const std::string& prefix) {
     std::string thePrefix = prefix;
@@ -228,7 +228,7 @@ Loader::doOneGroup(const std::string& objName,
 // ============================================================================
 
 void
-Loader::processDataSet(const std::string & dataSetName) {
+HdfDump::processDataSet(const std::string & dataSetName) {
     cout << "\nProcessing " << dataSetName << endl;
     _attr.clear();
     _dim.clear();
@@ -267,7 +267,7 @@ Loader::processDataSet(const std::string & dataSetName) {
         addAttrFloatType(dataSet.getFloatType(), "");
     } else if ( type_class == H5T_COMPOUND ) {
         processCompoundType(compType, "");
-    } else if ( type_class = H5T_ARRAY ) {
+    } else if ( type_class == H5T_ARRAY ) {
         ArrayType arrayType = dataSet.getArrayType();
         processArrayType(arrayType);
     } else {
@@ -299,7 +299,7 @@ Loader::processDataSet(const std::string & dataSetName) {
 // ============================================================================
 
 void
-Loader::dumpSchema(const std::string & dataSetName) {
+HdfDump::dumpSchema(const std::string & dataSetName) {
     std::ofstream f(outFNameSchema, std::ios::out | std::ios::app);
     f << "\nCREATE ARRAY " << convertDataSetNameToArrayName(dataSetName)
       << " (" << attributesToString() << "\n) "
@@ -311,7 +311,7 @@ Loader::dumpSchema(const std::string & dataSetName) {
 // ============================================================================
 
 void
-Loader::dumpData(const std::string& dataSetName,
+HdfDump::dumpData(const std::string& dataSetName,
                  DataSet& dataSet, 
                  H5T_class_t typeClass, 
                  hsize_t curDim) {
@@ -334,7 +334,7 @@ Loader::dumpData(const std::string& dataSetName,
 // ============================================================================
 
 void
-Loader::dumpData_1dArray_compound(const std::string& dataSetName,
+HdfDump::dumpData_1dArray_compound(const std::string& dataSetName,
                                   DataSet& dataSet, 
                                   H5T_class_t typeClass, 
                                   hsize_t curDim) {
@@ -476,7 +476,7 @@ Loader::dumpData_1dArray_compound(const std::string& dataSetName,
 // ============================================================================
 
 void
-Loader::dumpData_mdArray_nonCompound(const std::string& dataSetName,
+HdfDump::dumpData_mdArray_nonCompound(const std::string& dataSetName,
                                      DataSet& dataSet, 
                                      H5T_class_t typeClass, 
                                      hsize_t curDim) {
@@ -551,7 +551,7 @@ Loader::dumpData_mdArray_nonCompound(const std::string& dataSetName,
 // ============================================================================
 
 void
-Loader::addAttrIntType(const DataType& dt, const H5std_string& mName) {
+HdfDump::addAttrIntType(const DataType& dt, const H5std_string& mName) {
     OneAttr a;
     a.type = H5T_INTEGER;
     a.attrName = mName;
@@ -619,7 +619,7 @@ Loader::addAttrIntType(const DataType& dt, const H5std_string& mName) {
 // ============================================================================
 
 void
-Loader::addAttrFloatType(const DataType& dt, const H5std_string& mName) {
+HdfDump::addAttrFloatType(const DataType& dt, const H5std_string& mName) {
     OneAttr a;
     a.attrName = mName;
     a.type = H5T_FLOAT;
@@ -650,7 +650,7 @@ Loader::addAttrFloatType(const DataType& dt, const H5std_string& mName) {
 // ============================================================================
 
 void
-Loader::addAttrStringType(const DataType& dt, const H5std_string& mName) {
+HdfDump::addAttrStringType(const DataType& dt, const H5std_string& mName) {
     OneAttr a;
     a.type = H5T_STRING;
     a.attrName = mName;
@@ -689,7 +689,7 @@ Loader::addAttrStringType(const DataType& dt, const H5std_string& mName) {
 // ============================================================================
 
 void
-Loader::addAttrEnumType(const DataType& dt, const H5std_string& mName) {
+HdfDump::addAttrEnumType(const DataType& dt, const H5std_string& mName) {
     DataType sdt = dt.getSuper();
     
     OneAttr a;
@@ -744,15 +744,16 @@ Loader::addAttrEnumType(const DataType& dt, const H5std_string& mName) {
 // ============================================================================
 
 void
-Loader::flattenArray(ArrayType& arrayType, const std::string& mName) {
+HdfDump::flattenArray(ArrayType& arrayType, const std::string& mName) {
     int i, nDims = arrayType.getArrayNDims();
     hsize_t dims;
     arrayType.getArrayDims(&dims);
+    int dimProduct = dims * nDims;
 
     DataType dt = arrayType.getSuper();
     H5T_class_t dtc = dt.getClass();
 
-    for (i = 0 ; i<nDims*dims ; i++) {
+    for (i = 0 ; i<dimProduct ; i++) {
         std::ostringstream oss;
         oss << mName << "_" << i;
         if ( dtc == H5T_INTEGER ) {
@@ -772,7 +773,7 @@ Loader::flattenArray(ArrayType& arrayType, const std::string& mName) {
 // ============================================================================
 
 std::string
-Loader::attributesToString() const {
+HdfDump::attributesToString() const {
     std::stringstream oss;
     int i = 0;
     std::vector<OneAttr>::const_iterator itrA;
@@ -792,7 +793,7 @@ Loader::attributesToString() const {
 // ============================================================================
 
 std::string
-Loader::dimensionsToString() const {
+HdfDump::dimensionsToString() const {
     std::stringstream oss;
     int i = 0;
     std::vector< OneDim >::const_iterator itrD;
@@ -814,7 +815,7 @@ Loader::dimensionsToString() const {
 // ============================================================================
 
 std::string
-Loader::print_H5T_class_t_Name(H5T_class_t t) 
+HdfDump::print_H5T_class_t_Name(H5T_class_t t) 
 {
     switch (t) {
       case H5T_INTEGER:  return "INTEGER";
@@ -837,7 +838,7 @@ Loader::print_H5T_class_t_Name(H5T_class_t t)
 // ============================================================================
 
 void
-Loader::processCompoundType(const CompType& ct, 
+HdfDump::processCompoundType(const CompType& ct, 
                             const H5std_string& parentMName) {
     int i, n = ct.getNmembers();
     for (i=0 ; i<n ; i++) {
@@ -881,7 +882,7 @@ Loader::processCompoundType(const CompType& ct,
 // ============================================================================
 
 void
-Loader::processArrayType(ArrayType& arrayType) {
+HdfDump::processArrayType(ArrayType& arrayType) {
     int i, nDims = arrayType.getArrayNDims();
     hsize_t* dims = new hsize_t[nDims];
     arrayType.getArrayDims(dims);
@@ -908,7 +909,7 @@ Loader::processArrayType(ArrayType& arrayType) {
 
 // Replaces '/', ':' and '.' with '_'. Also, remove leading '/'
 std::string
-Loader::convertDataSetNameToArrayName(const std::string & dataSetName) {
+HdfDump::convertDataSetNameToArrayName(const std::string & dataSetName) {
     std::string rep(dataSetName, 1);
     std::replace( rep.begin(), rep.end(), '/', '_' );
     std::replace( rep.begin(), rep.end(), ':', '_' );
@@ -923,7 +924,7 @@ Loader::convertDataSetNameToArrayName(const std::string & dataSetName) {
 // ============================================================================
 
 std::string
-Loader::printPredType(const DataType& dt) {
+HdfDump::printPredType(const DataType& dt) {
     
     if ( dt == PredType::C_S1 ) return "C_S1";
     else if ( dt == PredType::FORTRAN_S1 ) return "FORTRAN_S1";

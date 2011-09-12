@@ -29,12 +29,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SCIDB_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -rdynamic")
 
 
-
-
-
 # file dumper
-add_executable(loader loader.cc printHdf.cc)
-target_link_libraries(loader ${HDF5_LIBRARIES})
+add_executable(printHdf HdfDump.cc printHdf.cc)
+target_link_libraries(printHdf ${HDF5_LIBRARIES})
 
 # SciDb plugin
 set(plugin_src plugin.cc loadOperator.cc H5Array.cc H5Array_Scidb.cc
