@@ -17,10 +17,15 @@
 #define LOADER_FITSOPERATOR_HH
 
 #include <string>
+#include <boost/shared_ptr.hpp>
 
+namespace scidb {
+    class Query; // forward
+}
 void loadFits(std::string const& filePath, 
               int hduNumber,
-              std::string const& arrayName);
+              std::string const& arrayName,
+              boost::shared_ptr<scidb::Query>& q);
 
 
 #endif // LOADER_FITSOPERATOR_HH

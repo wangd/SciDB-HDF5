@@ -51,7 +51,8 @@ namespace {
 
 void loadHdf(std::string const& filePath, 
              std::string const& hdfPath, 
-             std::string const& arrayName) {
+             std::string const& arrayName,
+             boost::shared_ptr<scidb::Query>& q) {
     std::string resultName = arrayName;
 
     H5Array ha(filePath, hdfPath);
@@ -59,7 +60,7 @@ void loadHdf(std::string const& filePath,
     std::cout << "Retrieving descriptor for " << filePath << " --> " 
               << hdfPath << std::endl;
     scidb::ArrayID aid = scidbCreateArray(arrayName, *ha.arrayDesc());
-    ScidbArrayCopier copier(aid, ha.attrCount());
+    ScidbArrayCopier copier(aid, ha.attrCount(), q);
     
     std::cout << "Added array to catalog and contructed dbarray." 
               << std::endl; 

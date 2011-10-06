@@ -32,8 +32,13 @@ scidb::ArrayID scidbCreateArray(std::string const& arrayName,
     return catalog.addArray(aDesc, scidb::psLocalNode); 
 }
 
-ScidbArrayCopier::ScidbArrayCopier(scidb::ArrayID& arrayId, int attrCount)
-    : _array(new scidb::DBArray(arrayId)), _attrCount(attrCount) {
+ScidbArrayCopier::ScidbArrayCopier(scidb::ArrayID& arrayId, 
+                                   int attrCount,
+                                   boost::shared_ptr<scidb::Query>& q)
+    : _array(new scidb::DBArray(arrayId, q)), 
+      _query(q),
+      _attrCount(attrCount)
+{
     // Nothing for now.
 }
 
@@ -53,6 +58,6 @@ void ScidbArrayCopier::copyChunk(int attNo, Source& source) {
     outChunk.setSparse(false); // Never sparse
     source.copy(attNo, outChunk.getData());
     outChunk.setCount(source.elementCount(attNo, true));
-    outChunk.write();
+    outChunk.write(_query);
 }
 

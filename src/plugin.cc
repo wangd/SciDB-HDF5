@@ -91,12 +91,13 @@ public:
     }
     
     boost::shared_ptr<scidb::Array> execute(ArrayVector& inputArrays, 
-                                            boost::shared_ptr<scidb::Query> ) {
+                                            boost::shared_ptr<scidb::Query> q) {
         assert(inputArrays.size() == 0);
         loadHdf(
                 extractParam(*_parameters[1]), // path to h5 file
                 extractParam(*_parameters[2]), // path to array
-                extractParam(*_parameters[0]) // array name
+                extractParam(*_parameters[0]), // array name
+                q // "query" now required as of scidb svn r3567
                 );
         // Not sure what to return as an array right now.
         return ArrayPtr();

@@ -17,10 +17,17 @@
 #define LOADER_LOADOPERATOR_HH
 
 #include <string>
+#include <boost/shared_ptr.hpp>
+
+namespace scidb {
+    class Query; // forward
+}
 
 void loadHdf(std::string const& filePath, 
              std::string const& hdfPath, 
-             std::string const& arrayName);
+             std::string const& arrayName,
+             boost::shared_ptr<scidb::Query>& q);
+
 
 
 #endif // LOADER_LOADOPERATOR_HH

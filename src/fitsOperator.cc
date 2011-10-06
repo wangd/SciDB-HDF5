@@ -47,7 +47,8 @@ namespace {
 
 void loadFits(std::string const& filePath, 
               int hduNumber,
-              std::string const& arrayName) {
+              std::string const& arrayName,
+              boost::shared_ptr<scidb::Query>& q) {
     std::string resultName = arrayName;
 
     // Do something good.
@@ -60,7 +61,7 @@ void loadFits(std::string const& filePath,
     scidb::ArrayID aid = scidbCreateArray(arrayName, *fa.arrayDesc());
     std::cout << "Created array(" << arrayName << std::endl;
 
-    ScidbArrayCopier copier(aid, 1);
+    ScidbArrayCopier copier(aid, 1, q);
     std::cout << "Prepared copier" << std::endl;
     FitsSource f(fa);
     std::cout << "Prepared fitsSource" << std::endl;

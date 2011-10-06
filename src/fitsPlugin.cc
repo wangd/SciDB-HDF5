@@ -98,11 +98,12 @@ public:
     virtual ~PhysicalLoadFits() {}    
 
     boost::shared_ptr<scidb::Array> execute(ArrayVector& inputArrays, 
-                                            boost::shared_ptr<scidb::Query> ) {
+                                            boost::shared_ptr<scidb::Query> q) {
         assert(inputArrays.size() == 0);
         loadFits( extractString(*_parameters[1]), // path to FITS file
                   extractInt(*_parameters[2]), // HDU number
-                  extractString(*_parameters[0]) // array name
+                  extractString(*_parameters[0]), // array name
+                  q
                   );
         // Not sure what to return as an array right now.
         return ArrayPtr();

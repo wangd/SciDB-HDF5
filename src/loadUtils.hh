@@ -26,6 +26,7 @@
 namespace scidb {
     class ArrayDesc;
     class DBArray;
+    class Query;
 }
 
 // Free functions
@@ -46,13 +47,15 @@ public:
     };
 
 
-    ScidbArrayCopier(scidb::ArrayID& arrayId, int attrCount);
+    ScidbArrayCopier(scidb::ArrayID& arrayId, int attrCount,
+                     boost::shared_ptr<scidb::Query>& q);
 
     void copyChunks(Source& target);
     void copyChunk(int attNo, Source& target);
 
 private:
     boost::shared_ptr<scidb::DBArray> _array;
+    boost::shared_ptr<scidb::Query> _query;
     int _attrCount;
 };
 
