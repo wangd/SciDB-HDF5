@@ -16,6 +16,7 @@
 
 #include "FitsArray.hh"
 #include <cmath>
+#include <cstring>
 #include <CCfits/FITSUtil.h>
 ////////////////////////////////////////////////////////////////////////
 // Local helpers

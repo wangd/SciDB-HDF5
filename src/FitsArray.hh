@@ -18,6 +18,7 @@
 
 #include <CCfits/CCfits> 
 #include <boost/shared_ptr.hpp>
+#include <stdint.h> // for uint32_t, etc.
 
 // Forward:
 namespace scidb {
