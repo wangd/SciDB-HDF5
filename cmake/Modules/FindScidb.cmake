@@ -33,7 +33,7 @@ find_path(SCIDB_INCLUDE_ARRAY  array/Array.h
   DOC "Path to include directory for array/Array.h in Scidb source tree")
 
 find_path(SCIDB_SRC_DIR array/Metadata.cpp 
-  HINTS $SCIDB_ROOT_DIR 
+  HINTS ${SCIDB_ROOT_DIR}
   PATH_SUFFIXES src)
 
 find_package_handle_standard_args(SCIDB DEFAULT_MSG 
