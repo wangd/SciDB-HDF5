@@ -43,6 +43,8 @@ target_link_libraries(loadhdf ${HDF5_LIBRARIES})
 find_package(Cfitsio)
 if(CCFITS_FOUND)
   message("FITS loader enabled")
+  include_directories(${CFITSIO_INCLUDE_DIR} ${CCFITS_INCLUDE_DIR})
+
   set(fitsplugin_src fitsPlugin.cc fitsOperator.cc FitsArray.cc 
     FitsArray_Scidb.cc loadUtils.cc arrayCommon.cc)
   add_library(loadfits SHARED ${fitsplugin_src})
