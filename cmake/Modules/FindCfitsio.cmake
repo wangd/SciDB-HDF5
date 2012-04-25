@@ -12,9 +12,9 @@
 #  CCFITS_INCLUDE
 #  CCFITS_LIBRARY
 #
-# Affected by environment variables:
-#  CFITSIOINC_PATH
-#  CFITSIOLIB_PATH
+# Hints for non-standard locations:
+# CFITSIO_ROOT_DIR
+# CCFITS_ROOT_DIR
 #
 #   Copyright 2011  Jacek Becla, Daniel Liwei Wang
 #
@@ -33,14 +33,21 @@
 include(FindPackageHandleStandardArgs)
 
 # Look for includes and libraries
-find_path(CFITSIO_INCLUDE_DIR  fitsio.h PATHS $ENV{CFITSIOINC_PATH})
-find_library(CFITSIO_LIBRARY  cfitsio  PATHS $ENV{CFITSIOLIB_PATH})
-
-find_path(CCFITS_INCLUDE_DIR  CCfits/CCfits PATHS $ENV{CFITSIOINC_PATH})
-find_library(CCFITS_LIBRARY  CCfits PATHS $ENV{CFITSIOLIB_PATH})
+find_path(CFITSIO_INCLUDE_DIR 
+  NAMES fitsio.h 
+  HINTS ${CFITSIO_ROOT_DIR} PATH_SUFFIXES include include/cfitsio
+  )
+find_library(CFITSIO_LIBRARY  cfitsio  
+  HINTS ${CFITSIO_ROOT_DIR} PATH_SUFFIXES lib)
 
 find_package_handle_standard_args(CFITSIO  DEFAULT_MSG  
   CFITSIO_INCLUDE_DIR CFITSIO_LIBRARY)
+
+
+find_path(CCFITS_INCLUDE_DIR  CCfits/CCfits 
+  HINTS ${CCFITS_ROOT_DIR} PATH_SUFFIXES include)
+find_library(CCFITS_LIBRARY  CCfits 
+  HINTS ${CCFITS_ROOT_DIR} PATH_SUFFIXES lib)
 find_package_handle_standard_args(CCFITS  DEFAULT_MSG  
   CCFITS_INCLUDE_DIR CCFITS_LIBRARY)
 #find_package_handle_standard_args(LIBSZ  DEFAULT_MSG  SZ_LIB)
