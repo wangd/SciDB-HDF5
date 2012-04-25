@@ -1,6 +1,6 @@
 # -- Check for the SciDB source tree --
 #
-# Uses path overrides: SCIDBINC_PATH SCIDB_DIR
+# Required: SciDB source checkout. Specify using SCIDB_ROOT_DIR
 #
 # Defines:
 #
@@ -28,19 +28,21 @@ include(FindPackageHandleStandardArgs)
 
 # Look for includes and libraries
 find_path(SCIDB_INCLUDE_ARRAY  array/Array.h 
-  PATHS $ENV{SCIDBINC_PATH} 
-  $ENV{SCIDBTOP_PATH}/src 
-  ${SCIDB_DIR}/include 
-  ${SCIDB_DIR}/src 
-  DOC "Path to include directory for array/Array.h")
-find_path(SCIDB_INCLUDE_CFG  network/SciDBConfig.h PATHS $ENV{SCIDBINC_PATH} $ENV{SCIDBTOP_PATH}/src ${SCIDB_DIR}/include ${SCIDB_DIR}/src )
-find_path(SCIDB_SRC_DIR array/Metadata.cpp PATH $ENV{SCIDBTOP_PATH}/src ${SCIDB_DIR}/src)
+  HINTS ${SCIDB_ROOT_DIR}
+  PATH_SUFFIXES include src
+  DOC "Path to include directory for array/Array.h in Scidb source tree")
 
-find_package_handle_standard_args(SCIDB DEFAULT_MSG SCIDB_INCLUDE_ARRAY SCIDB_INCLUDE_CFG SCIDB_SRC_DIR)
+find_path(SCIDB_SRC_DIR array/Metadata.cpp 
+  HINTS $SCIDB_ROOT_DIR 
+  PATH_SUFFIXES src)
+
+find_package_handle_standard_args(SCIDB DEFAULT_MSG 
+  SCIDB_INCLUDE_ARRAY 
+  SCIDB_SRC_DIR)
 
 if(SCIDB_FOUND)
-  set(SCIDB_INCLUDES ${SCIDB_INCLUDE_ARRAY} ${SCIDB_INCLUDE_CFG})
-  set(SCIDB_CXX_FLAGS "-DPROJECT_ROOT=\\\"${SCIDB_DIR}/\\\"")
+  set(SCIDB_INCLUDES ${SCIDB_INCLUDE_ARRAY}) 
+  set(SCIDB_CXX_FLAGS "-DPROJECT_ROOT=\\\"${SCIDB_ROOT_DIR}/\\\"")
 
 endif(SCIDB_FOUND)
 mark_as_advanced(Scidb_FOUND SCIDB_INCLUDES SCIDB_SRC_DIR SCIDB_CXX_FLAGS)
