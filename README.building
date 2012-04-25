@@ -2,13 +2,6 @@ Building using cmake can be difficult, especially for those unfamiliar
 with cmake.  The authors regret that their cmake expertise is limited
 and may contribute to a more difficult build experience.
 
-
-
-Build recommendations
----------------------
-* Do not build in-tree. This means: Please do not run "cmake ." in the
-same directory as your source tree checkout.
-
 Prerequisites
 -------------
 * CFITSIO
@@ -43,7 +36,24 @@ SCIDB_ROOT_DIR
 Note that SCIDB_ROOT_DIR must always be specified, since a full SciDB
 source tree checkout is needed to build this module.
 
+Build recommendations
+---------------------
+* Do not build in-tree. This means: Please do not run "cmake ." in the
+same directory as your source tree checkout.
 
+Example
+-------
 
+Here is an example that has worked for one development setup:
+----
+git clone git@github.com:wangd/SciDB-HDF5.git
+cd SciDB-HDF5
+mkdir bld
+cd bld
+cmake -DCFITSIO_ROOT_DIR=/u24/danielw/cfitsio \
+  -DCCFITS_ROOT_DIR=/u22/danielw  \
+  -DSCIDB_ROOT_DIR=/u22/danielw/scidb-trunk .. 
+make
+----
 
 
