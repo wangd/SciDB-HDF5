@@ -15,6 +15,7 @@
 //
 #include "HdfDump.hh"
 #include <unistd.h>
+#include <stdlib.h>
 
 namespace {
 
