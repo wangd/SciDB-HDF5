@@ -26,10 +26,10 @@ include(FindPackageHandleStandardArgs)
 
 # Look for includes and libraries
 find_path(HDF5_INCLUDE_DIR  H5Cpp.h PATHS $ENV{H5INC_PATH})
-find_library(HDF5_LIBRARY_BASE  hdf5  PATHS $ENV{HDFLIB_PATH})
-find_library(HDF5_LIBRARY_CPP  hdf5_cpp  PATHS $ENV{HDFLIB_PATH})
-find_library(HDF5_LIBRARY_HL  hdf5_hl  PATHS $ENV{HDFLIB_PATH})
-find_library(HDF5_LIBRARY_HL_CPP  hdf5_hl_cpp  PATHS $ENV{HDFLIB_PATH})
+find_library(HDF5_LIBRARY_BASE  hdf5  PATHS $ENV{H5LIB_PATH})
+find_library(HDF5_LIBRARY_CPP  hdf5_cpp  PATHS $ENV{H5LIB_PATH})
+find_library(HDF5_LIBRARY_HL  hdf5_hl  PATHS $ENV{H5LIB_PATH})
+find_library(HDF5_LIBRARY_HL_CPP  hdf5_hl_cpp  PATHS $ENV{H5LIB_PATH})
 find_library(LIBZ z)
 find_library(SZ_LIB sz PATHS $ENV{H5LIB_PATH})
 

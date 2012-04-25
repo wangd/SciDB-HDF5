@@ -48,6 +48,11 @@ if(CCFITS_FOUND)
   add_library(loadfits SHARED ${fitsplugin_src})
 
   target_link_libraries(loadfits ${CCFITS_LIBRARY})
+  ## FITS
+  include_directories(${CCFITS_INCLUDE} )
+  add_executable(testFits testFits.cc FitsArray.cc)
+  target_link_libraries(testFits ${CCFITS_LIBRARY} ${CFITSIO_LIBRARY})
+  
 else(CCFITS_FOUND)
   message("Disabling FITS loader")
 endif(CCFITS_FOUND)
@@ -77,10 +82,6 @@ find_library(BOOST_PROGOPTS boost_program_options)
 add_executable(testHdf testHdf.cc H5Array.cc arrayCommon.cc H5Array_stub.cc)
 target_link_libraries(testHdf ${HDF5_LIBRARIES})
 
-## FITS
-include_directories(${CCFITS_INCLUDE} )
-add_executable(testFits testFits.cc FitsArray.cc)
-target_link_libraries(testFits ${CCFITS_LIBRARY} ${CFITSIO_LIBRARY})
 
 
 #include(FeatureSummary)
