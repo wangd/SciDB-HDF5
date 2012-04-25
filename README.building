@@ -1,0 +1,49 @@
+Building using cmake can be difficult, especially for those unfamiliar
+with cmake.  The authors regret that their cmake expertise is limited
+and may contribute to a more difficult build experience.
+
+
+
+Build recommendations
+---------------------
+* Do not build in-tree. This means: Please do not run "cmake ." in the
+same directory as your source tree checkout.
+
+Prerequisites
+-------------
+* CFITSIO
+* CCfits
+* HDF5
+* SciDB source tree (tested with 0.75+)
+
+When installing via your distribution's package manager, please ensure
+that you install the development headers as well as the compiled
+binaries. On RPM-based systems 
+(e.g., RedHat, Fedora) this means you must install the -devel
+packages. On Debian/Ubuntu-based systems, you should install the
+-headers packages.
+
+
+Using dependencies in non-standard locations 
+--------------------------------------------
+SciDB-HDF5 was developed on a system without root-access, so if you
+can't install dependencies into the usual system-wide locations,
+you'll need to instruct the cmake on where to find dependencies.
+
+The easiest way is to specify BASE_DIR.  Assuming you installed
+the dependencies into non-standard locations using a --prefix=<dir>
+(or equivalent), you can specify BASE_DIR, and the build script will
+look there for all of its dependencies.
+
+You can also specify directories for each dependency:
+CFITSIO_ROOT_DIR
+CCFITS_ROOT_DIR
+SCIDB_ROOT_DIR
+
+Note that SCIDB_ROOT_DIR must always be specified, since a full SciDB
+source tree checkout is needed to build this module.
+
+
+
+
+
