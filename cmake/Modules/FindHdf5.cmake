@@ -1,6 +1,7 @@
 # -- Check for the HDF5 library --
 #
-# Uses path overrides: H5INC_PATH and H5LIB_PATH 
+# Uses path overrides (via env): H5INC_PATH and H5LIB_PATH 
+# Path overrides (via -D...): BASE_DIR and H5_ROOT_DIR
 #
 # Defines:
 #
@@ -25,13 +26,22 @@
 include(FindPackageHandleStandardArgs)
 
 # Look for includes and libraries
-find_path(HDF5_INCLUDE_DIR  H5Cpp.h PATHS $ENV{H5INC_PATH})
-find_library(HDF5_LIBRARY_BASE  hdf5  PATHS $ENV{H5LIB_PATH})
-find_library(HDF5_LIBRARY_CPP  hdf5_cpp  PATHS $ENV{H5LIB_PATH})
-find_library(HDF5_LIBRARY_HL  hdf5_hl  PATHS $ENV{H5LIB_PATH})
-find_library(HDF5_LIBRARY_HL_CPP  hdf5_hl_cpp  PATHS $ENV{H5LIB_PATH})
+find_path(HDF5_INCLUDE_DIR  H5Cpp.h 
+  HINTS ${H5_ROOT_DIR} ${BASE_DIR}
+  PATH_SUFFIXES include
+  PATHS $ENV{H5INC_PATH})
+
+find_library(HDF5_LIBRARY_BASE  hdf5  
+  HINTS ${H5_ROOT_DIR} ${BASE_DIR} PATH_SUFFIXES lib PATHS $ENV{H5LIB_PATH})
+find_library(HDF5_LIBRARY_CPP  hdf5_cpp
+  HINTS ${H5_ROOT_DIR} ${BASE_DIR} PATH_SUFFIXES lib PATHS $ENV{H5LIB_PATH})
+find_library(HDF5_LIBRARY_HL  hdf5_hl
+  HINTS ${H5_ROOT_DIR} ${BASE_DIR} PATH_SUFFIXES lib PATHS $ENV{H5LIB_PATH})
+find_library(HDF5_LIBRARY_HL_CPP  hdf5_hl_cpp  
+  HINTS ${H5_ROOT_DIR} ${BASE_DIR} PATH_SUFFIXES lib PATHS $ENV{H5LIB_PATH})
 find_library(LIBZ z)
-find_library(SZ_LIB sz PATHS $ENV{H5LIB_PATH})
+find_library(SZ_LIB sz 
+  HINTS ${H5_ROOT_DIR} ${BASE_DIR} PATH_SUFFIXES lib PATHS $ENV{H5LIB_PATH})
 
 find_package_handle_standard_args(HDF5  DEFAULT_MSG  HDF5_LIBRARY_BASE  HDF5_LIBRARY_CPP LIBZ HDF5_INCLUDE_DIR)
 find_package_handle_standard_args(LIBSZ  DEFAULT_MSG  SZ_LIB)
