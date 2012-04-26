@@ -32,9 +32,13 @@ You can also specify directories for each dependency:
 CFITSIO_ROOT_DIR
 CCFITS_ROOT_DIR
 SCIDB_ROOT_DIR
+H5_ROOT_DIR
 
 Note that SCIDB_ROOT_DIR must always be specified, since a full SciDB
 source tree checkout is needed to build this module.
+
+Each specification is passed to cmake via -D directives.  For example: 
+cmake -DH5_ROOT_DIR=/u24/danielw/hdf ......
 
 Build recommendations
 ---------------------
@@ -51,7 +55,8 @@ cd SciDB-HDF5
 mkdir bld
 cd bld
 cmake -DCFITSIO_ROOT_DIR=/u24/danielw/cfitsio \
-  -DCCFITS_ROOT_DIR=/u22/danielw  \
+  -DCCFITS_ROOT_DIR=/u22/danielw \
+  -DH5_ROOT_DIR=/u24/danielw/hdf \
   -DSCIDB_ROOT_DIR=/u22/danielw/scidb-trunk .. 
 make
 ----
