@@ -370,7 +370,8 @@ HdfDump::dumpData_1dArray_compound(const std::string& dataSetName,
                 H5Tset_cset(strType, itr->strCset);
                 H5Tset_strpad(strType, itr->strPad);
                 hsize_t array_dim[] = {nestedArrayDim};
-                id_t naType = H5Tarray_create(strType, 1, array_dim);
+                int array_perm[] = {nestedArrayDim};
+                id_t naType = H5Tarray_create(strType, 1, array_dim, array_perm);
                 compType.insertMember(itr->inNA, offset, naType);
             } else {
                 cout << "not implemented" << endl;

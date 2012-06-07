@@ -19,7 +19,7 @@
 // scidb
 #include "SciDBAPI.h"
 #include "query/Operator.h"
-//#include "system/ErrorCodes.h"
+#include "system/ErrorCodes.h"
 
 // pkg
 #include "fitsOperator.hh"
@@ -62,8 +62,11 @@ public:
         using scidb::DimensionDesc;
         using scidb::TID_INT32;
         using scidb::TID_STRING;
-        USER_CHECK(scidb::SCIDB_E_INVALID_OPERAND, s.size() == 0, 
-                   "No input array is expected");
+        if (s.size() != 0) {
+            throw SYSTEM_EXCEPTION(
+                     scidb::SCIDB_SE_INFER_SCHEMA, 
+                     scidb::SCIDB_LE_ARRAY_ALREADY_EXIST) << "input array";
+        }
         return scidb::ArrayDesc();
 
         //Not sure what to return right now.

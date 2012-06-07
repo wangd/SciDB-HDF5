@@ -41,6 +41,7 @@ namespace {
                                         fd, // chunkInterval
                                         0, // overlap
                                         SCIDB_TID_INT64, // dim type
+                                        0,   // flags
                                         ""); //array name
         }
         int dimNum;

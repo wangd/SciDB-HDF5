@@ -29,7 +29,7 @@ scidb::ArrayID scidbCreateArray(std::string const& arrayName,
         catalog.deleteArray(arrayName);
     }
     aDesc.setName(arrayName);
-    return catalog.addArray(aDesc, scidb::psLocalNode); 
+    return catalog.addArray(aDesc, scidb::psLocalInstance); 
 }
 
 ScidbArrayCopier::ScidbArrayCopier(scidb::ArrayID& arrayId, 
