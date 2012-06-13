@@ -35,7 +35,6 @@ scidb::ArrayID scidbCreateArray(std::string const& arrayName,
 // Copier class
 class ScidbArrayCopier {
 public:
-
     class Source {
     public:
         typedef int64_t Size;
@@ -45,7 +44,6 @@ public:
         virtual Size elementCount(int attNo, bool clip=false) const = 0;
         virtual void copy(int attNo, void* target) = 0;
     };
-
 
     ScidbArrayCopier(scidb::ArrayID& arrayId, int attrCount,
                      boost::shared_ptr<scidb::Query>& q);
