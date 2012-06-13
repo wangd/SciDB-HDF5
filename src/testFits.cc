@@ -30,10 +30,7 @@ using CCfits::PHDU;
 struct FitsFixture {
 
     FitsFixture() :defaultFitsFile("S11.fits") {}
-    ~FitsFixture() {}
-
-
-    
+    ~FitsFixture() {}    
 
     std::string const defaultFitsFile;
 };
@@ -76,9 +73,6 @@ BOOST_AUTO_TEST_CASE(testDumpArray) {
     FitsArray::dbgDumpArray(defaultFitsFile, 3, 100, buffer);
     std::copy((float*)buffer, static_cast<float*>(buffer)+100, 
               std::ostream_iterator<float>(std::cout, ", "));
-
 }
-
-
 
 BOOST_AUTO_TEST_SUITE_END()
