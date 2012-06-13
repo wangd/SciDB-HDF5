@@ -76,7 +76,6 @@ public:
         scidb::Dimensions dims(1);
         dims[0] = DimensionDesc("i", 0, 0, 0, 0, 2, 0);
         return scidb::ArrayDesc("loadfits", attrs, dims);
-
     }
 };
 namespace scidb {
@@ -94,7 +93,7 @@ public:
                     const scidb::ArrayDesc& schema)
         : scidb::PhysicalOperator(logicalName, 
                                   physicalName, 
-                                  parameters, 
+                                  parameters,
                                   schema) {
     }
 

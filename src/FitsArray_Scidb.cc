@@ -96,6 +96,5 @@ boost::shared_ptr<scidb::ArrayDesc> FitsArray::arrayDesc() const {
                                          ));
     convertInto(sDims, *_dims);
     return boost::make_shared<scidb::ArrayDesc>(unknown,sAtts,sDims); 
-
-
 }
+

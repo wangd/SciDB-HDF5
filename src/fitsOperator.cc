@@ -25,7 +25,6 @@ namespace {
     public:
         FitsSource(FitsArray& fa) : _fa(fa), _coords(fa.rank(), 0) {
         }
-
         virtual scidb::Coordinates const& coords() const {
             return _coords;
         }
