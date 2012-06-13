@@ -72,7 +72,7 @@ FitsAttr::FitsAttr(int bitPix_, double scale_, double zero_)
 // FitsArray public:
 ////////////////////////////////////////////////////////////////////////
 FitsArray::FitsArray(std::string const& fName, int hduNum) 
-    :_hduNum(hduNum), _pCount(0), _gCount(0) {
+    :_hduNum(hduNum), _pCount(0), _gCount(1) {
     _fits.reset(new CCfits::FITS(fName, CCfits::Read));
     assert(_fits.get());
     if(hduNum == 0) {
@@ -92,6 +92,8 @@ FitsArray::Size FitsArray::elementCount() const {
 }
 
 FitsArray::Size FitsArray::footprint() const {
+    //std::cout << _attr->byteSize << "*" << _gCount << "* (" 
+    //          << elementCount() << " +" <<  _pCount << ")" << std::endl;
     return _attr->byteSize * _gCount * (elementCount() + _pCount);
 }
 
