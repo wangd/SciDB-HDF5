@@ -66,5 +66,6 @@ void loadFits(std::string const& filePath,
     std::cout << "Prepared fitsSource" << std::endl;
 
     copier.copyChunk(0, f);
-    std::cout << "Copied chunk." << std::endl;
+    std::cout << "Copied chunk (" << f.elementCount(0, true) 
+              << " elements)" << std::endl;
 }
