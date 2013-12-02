@@ -30,8 +30,8 @@ namespace scidb {
 }
 
 // Free functions
-scidb::ArrayID scidbCreateArray(std::string const& arrayName, 
-                                scidb::ArrayDesc& aDesc);
+void scidbCreateArray(std::string const& arrayName, 
+                      scidb::ArrayDesc& aDesc);
 // Copier class
 class ScidbArrayCopier {
 public:
@@ -47,7 +47,7 @@ public:
     };
 
 
-    ScidbArrayCopier(scidb::ArrayID& arrayId, int attrCount,
+    ScidbArrayCopier(scidb::ArrayDesc& arrayDesc, int attrCount,
                      boost::shared_ptr<scidb::Query>& q);
 
     void copyChunks(Source& target);

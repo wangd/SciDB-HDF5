@@ -59,8 +59,10 @@ void loadHdf(std::string const& filePath,
 
     std::cout << "Retrieving descriptor for " << filePath << " --> " 
               << hdfPath << std::endl;
-    scidb::ArrayID aid = scidbCreateArray(arrayName, *ha.arrayDesc());
-    ScidbArrayCopier copier(aid, ha.attrCount(), q);
+
+    boost::shared_ptr<scidb::ArrayDesc> arrayDesc = ha.arrayDesc();
+    scidbCreateArray(arrayName, *arrayDesc);
+    ScidbArrayCopier copier(*arrayDesc, ha.attrCount(), q);
     
     std::cout << "Added array to catalog and contructed dbarray." 
               << std::endl; 
