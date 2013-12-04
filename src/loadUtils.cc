@@ -56,6 +56,7 @@ void ScidbArrayCopier::copyChunk(int attNo, Source& source) {
     //std::cout << "chunk footprint=" << source.footprint(attNo) << std::endl;
     outChunk.allocate(source.footprint(attNo));
     outChunk.setSparse(false); // Never sparse
+    outChunk.setRLE(false); // Don't use RLE for now
     source.copy(attNo, outChunk.getData());
     outChunk.setCount(source.elementCount(attNo, true));
     outChunk.write(_query);
