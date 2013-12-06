@@ -27,6 +27,7 @@ namespace scidb {
     class ArrayDesc;
     class DBArray;
     class Query;
+    class ChunkIterator;
 }
 
 // Free functions
@@ -44,6 +45,7 @@ public:
         virtual Size footprint(int attNo) const = 0; 
         virtual Size elementCount(int attNo, bool clip=false) const = 0;
         virtual void copy(int attNo, void* target) = 0;
+        virtual void copyIntoChunk(int attNo, scidb::ChunkIterator& ci) = 0;
     };
 
 

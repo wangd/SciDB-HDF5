@@ -42,6 +42,9 @@ namespace {
         virtual void copy(int attNo, void* target) {
             _si.readInto(attNo, target);
         }
+        virtual void copyIntoChunk(int attNo, scidb::ChunkIterator& ci) {
+            _si.readIntoChunk(attNo, ci);
+        }
     private:
         H5Array::SlabIter& _si;
     };

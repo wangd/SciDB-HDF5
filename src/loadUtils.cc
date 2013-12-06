@@ -51,14 +51,11 @@ void ScidbArrayCopier::copyChunks(Source& source) {
 void ScidbArrayCopier::copyChunk(int attNo, Source& source) {
     scidb::Coordinates const& coords = source.coords(); 
     boost::shared_ptr<scidb::ArrayIterator> ai;
+    boost::shared_ptr<scidb::ChunkIterator> ci;
     ai = _array->getIterator(attNo);
     scidb::Chunk& outChunk = ai->newChunk(coords);
-    //std::cout << "chunk footprint=" << source.footprint(attNo) << std::endl;
-    outChunk.allocate(source.footprint(attNo));
-    outChunk.setSparse(false); // Never sparse
-    outChunk.setRLE(false); // Don't use RLE for now
-    source.copy(attNo, outChunk.getData());
-    outChunk.setCount(source.elementCount(attNo, true));
-    outChunk.write(_query);
+    ci = outChunk.getIterator(_query, scidb::ChunkIterator::SEQUENTIAL_WRITE);
+    source.copyIntoChunk(attNo, *ci);
+    ci->flush();
 }
 
