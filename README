@@ -59,14 +59,18 @@ counterparts in SciDB.
 AFL function signatures:
 ------------------------
 libloadhdf.so:
-void loadhdf(<target array name>, <full path of HDF5 file>, 
+void loadhdf(<full path of HDF5 file>, 
              <path to array within file>)
+
+This function produces a temporary array as its output.  To store this
+array permanently, wrap the result inside of SciDB's "store()" operator
+(see examples below).
 
 libloadfits.so:
 void loadhdf(<target array name>, <full path of FITS file>, 
              <HDU number>)
 
-Both functions overwrite the target specified array, which is deleted
+This function overwrites the target specified array, which is deleted
 if necessary and constructed with a shape and form according to the
 source array's original shape.
 
@@ -83,8 +87,9 @@ Trying out the loader:
 iquery -aq "load_library('loadhdf');"
 
 ## Load an array
-iquery -aq "loadhdf('image', '/u24/ldrd/sxrcom10-r0232.h5',
-'/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1/image');"
+iquery -naq "store(loadhdf('/u24/ldrd/sxrcom10-r0232.h5',
+'/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1/image'),
+image);"
 
 ## Some SciDB snippets to inspect the loaded array
 iquery -aq "show(image);"
@@ -96,8 +101,9 @@ iquery -aq "count(image);"
 iquery -aq "stdev(subarray(image,0,0,0,1023,1023,2),int1,unnamed2);"
 
 ## Load a compound:
-iquery -aq "loadhdf('imagetime', '/u24/ldrd/sxrcom10-r0232.h5',
-'/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1/time');
+iquery -aq "store(loadhdf('/u24/ldrd/sxrcom10-r0232.h5',
+'/Configure:0000/Run:0000/CalibCycle:0000/Camera::FrameV1/SxrBeamline.0:Opal1000.1/time'),
+imagetime);
 
 ## See its shape:
 iquery -aq "show(imagetime);"
