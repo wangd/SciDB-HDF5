@@ -17,7 +17,9 @@
 #include <boost/make_shared.hpp>
 #include <algorithm>
 // Scidb
+#include "array/Array.h"
 #include "array/Metadata.h"
+#include "query/TypeSystem.h"
 // Package
 #include "arrayCommon.hh"
 
@@ -59,6 +61,7 @@ namespace {
         //           std::ostream_iterator<ScidbDimLite>(std::cout, "\n"));
     }
 }
+
 boost::shared_ptr<scidb::ArrayDesc> 
 H5Array::ScidbIface::getArrayDesc(H5Array const& h) {
     std::string name("Unknown");
@@ -66,5 +69,14 @@ H5Array::ScidbIface::getArrayDesc(H5Array const& h) {
     scidb::Dimensions sDims;
     convertInto(sAtts, *h.scidbAttrs());
     convertInto(sDims, *h.scidbDims());
-    return boost::make_shared<scidb::ArrayDesc>(name,sAtts,sDims); 
+    return boost::make_shared<scidb::ArrayDesc>(name,sAtts,sDims,scidb::ArrayDesc::LOCAL); 
+}
+
+void
+H5Array::ScidbIface::readValueIntoChunk(scidb::ChunkIterator& ci, 
+                                        char* src, 
+                                        size_t size) {
+    scidb::Value v((void*)src, size);
+    ci.writeItem(v);
+    ++ci;
 }

@@ -21,12 +21,12 @@
 
 namespace scidb {
     class Query; // forward
+    class Array;
 }
 
-void loadHdf(std::string const& filePath, 
-             std::string const& hdfPath, 
-             std::string const& arrayName,
-             boost::shared_ptr<scidb::Query>& q);
+boost::shared_ptr<scidb::Array> loadHdf(std::string const& filePath, 
+                                        std::string const& hdfPath, 
+                                        boost::shared_ptr<scidb::Query>& q);
 
 
 

@@ -506,6 +506,44 @@ void* H5Array::SlabIter::readInto(int attNo, void* buffer) {
     }
 }
 
+void H5Array::SlabIter::_readAttrIntoChunk(scidb::ChunkIterator& ci, 
+                                            void* slabBuffer,
+                                            int attNo) {
+    // Perform gymnastics to copy the particular attribute's values
+    // from the slab buffer into a chunk using chunk iterators
+    // Find stride and offset
+    size_t stride = _ha._ds->getTypeSize();
+    // Apply datatype size.
+    AttrVectorPtr ap = _ha._ds->getAttrs();
+    AttrVector& a = *ap;
+    size_t offset = 0;
+    for(int i=0; i < attNo; ++i) {
+        offset += a[i].tS;
+    }
+    size_t eltSize = a[attNo].tS;
+    size_t elts = slabAttrSize(attNo) / eltSize;
+    size_t strideWithout = stride - eltSize;
+    char* src = reinterpret_cast<char*>(slabBuffer);
+    src += offset; // Shift for attr offset
+    for(unsigned i=0; i < elts; ++i) {
+        ScidbIface::readValueIntoChunk(ci, src, eltSize);
+        src += eltSize;
+        src += strideWithout; // Move to next array point.
+    }
+}
+
+/// Copy slab for attr #attNo into chunk using chunk iterator
+void H5Array::SlabIter::readIntoChunk(int attNo, scidb::ChunkIterator& ci)
+{
+    // Need to maintain buffer.
+    if(!_cacheValid) {
+        if(!_slabCache) _initSlabCache();
+        readSlabInto(_slabCache.get());
+        _cacheValid = true;
+    }
+    _readAttrIntoChunk(ci, _slabCache.get(), attNo);
+}
+
 // Find non-empty members in this slab. 
 // Always equal to slab extent, since everything is non-empty.
 // ...except when array edge is not on a chunk boundary.

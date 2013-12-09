@@ -21,7 +21,8 @@
 #include "arrayCommonFwd.hh"
 // Forward
 namespace scidb {
-    class ArrayDesc; 
+    class ArrayDesc;
+    class ChunkIterator;
 }
 
 
@@ -58,6 +59,7 @@ public:
         Size slabSize() const { return _slabSize; }
         Size slabAttrSize(int attNo) const;
         void* readInto(int attNo, void* buffer);
+        void readIntoChunk(int attNo, scidb::ChunkIterator& ci);
         void* readSlabInto(void* buffer);
         Size elementCount(int attNo, bool clipEdges) const;
         friend std::ostream& operator<<(std::ostream& os, SlabIter const& i);
@@ -67,6 +69,7 @@ public:
         SlabIter(H5Array const& ha, bool makeEnd=false);
         void _initSlabCache();
         void* _readAttrInto(void* buffer, void* slabBuffer, int attNo);
+        void _readAttrIntoChunk(scidb::ChunkIterator& ci, void* slabBuffer, int attNo);
         Size _computeSlabSize() const;
 
         H5Array const& _ha;
@@ -81,6 +84,7 @@ public:
     class ScidbIface {
     public:
         static boost::shared_ptr<scidb::ArrayDesc> getArrayDesc(H5Array const& h);
+        static void readValueIntoChunk(scidb::ChunkIterator& ci, char* src, size_t sz);
     };
 
     friend class SlabIter;

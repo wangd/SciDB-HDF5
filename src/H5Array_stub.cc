@@ -22,3 +22,9 @@ boost::shared_ptr<scidb::ArrayDesc>
 H5Array::ScidbIface::getArrayDesc(H5Array const& h) {
     return boost::shared_ptr<scidb::ArrayDesc>();
 }
+
+void 
+H5Array::ScidbIface::readValueIntoChunk(scidb::ChunkIterator& ci,
+                                        char* src,
+                                        size_t size) {
+}

@@ -25,13 +25,15 @@
 // Forward
 namespace scidb {
     class ArrayDesc;
-    class DBArray;
+    class Array;
+    class MemArray;
     class Query;
+    class ChunkIterator;
 }
 
 // Free functions
-scidb::ArrayID scidbCreateArray(std::string const& arrayName, 
-                                scidb::ArrayDesc& aDesc);
+void scidbCreateArray(std::string const& arrayName, 
+                      scidb::ArrayDesc& aDesc);
 // Copier class
 class ScidbArrayCopier {
 public:
@@ -44,17 +46,20 @@ public:
         virtual Size footprint(int attNo) const = 0; 
         virtual Size elementCount(int attNo, bool clip=false) const = 0;
         virtual void copy(int attNo, void* target) = 0;
+        virtual void copyIntoChunk(int attNo, scidb::ChunkIterator& ci) = 0;
     };
 
 
-    ScidbArrayCopier(scidb::ArrayID& arrayId, int attrCount,
+    ScidbArrayCopier(scidb::ArrayDesc& arrayDesc, int attrCount,
                      boost::shared_ptr<scidb::Query>& q);
 
     void copyChunks(Source& target);
     void copyChunk(int attNo, Source& target);
+    boost::shared_ptr<scidb::Array> getArray()
+        { return _array; }
 
 private:
-    boost::shared_ptr<scidb::DBArray> _array;
+    boost::shared_ptr<scidb::Array> _array;
     boost::shared_ptr<scidb::Query> _query;
     int _attrCount;
 };
