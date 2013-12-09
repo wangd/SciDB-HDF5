@@ -52,23 +52,17 @@ namespace {
 }
 
 
-void loadHdf(std::string const& filePath, 
-             std::string const& hdfPath, 
-             std::string const& arrayName,
-             boost::shared_ptr<scidb::Query>& q) {
-    std::string resultName = arrayName;
-
+boost::shared_ptr<scidb::Array>
+loadHdf(std::string const& filePath, 
+        std::string const& hdfPath,
+        boost::shared_ptr<scidb::Query>& q) {
     H5Array ha(filePath, hdfPath);
 
     std::cout << "Retrieving descriptor for " << filePath << " --> " 
               << hdfPath << std::endl;
 
     boost::shared_ptr<scidb::ArrayDesc> arrayDesc = ha.arrayDesc();
-    scidbCreateArray(arrayName, *arrayDesc);
     ScidbArrayCopier copier(*arrayDesc, ha.attrCount(), q);
-    
-    std::cout << "Added array to catalog and contructed dbarray." 
-              << std::endl; 
     
     std::cout << "Iterating... " << std::endl;
     std::cout << "begin: " << ha.begin() << std::endl;
@@ -80,8 +74,5 @@ void loadHdf(std::string const& filePath,
         copier.copyChunks(t);
     }
     
-    // Fill results
-
-    // FIXME: want to propagate some form of OK/FAIL result.
-    //res.setString(resultName); // Fill in result: name of new array
+    return copier.getArray();
 }

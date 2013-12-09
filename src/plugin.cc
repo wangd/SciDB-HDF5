@@ -19,17 +19,31 @@
 // scidb
 #include "SciDBAPI.h"
 #include "query/Operator.h"
+#include "query/TypeSystem.h"
 //#include "system/ErrorCodes.h"
 
+// hdf5 array
+#include "H5Array.hh"
 // pkg
 #include "loadOperator.hh"
 
 namespace {
-    std::string extractParam(scidb::OperatorParam& p) {
-        typedef scidb::OperatorParamPhysicalExpression OpExpr;
+    std::string extractPhysicalParam(scidb::OperatorParam& p) {
+        typedef scidb::OperatorParamPhysicalExpression OpPhyExpr;
         using scidb::Value;
         
-        Value v = dynamic_cast<OpExpr&>(p).getExpression()->evaluate();
+        Value v = dynamic_cast<OpPhyExpr&>(p).getExpression()->evaluate();
+        return v.getString();
+    }
+    std::string extractLogicalParam(scidb::OperatorParam& p,
+                                    boost::shared_ptr<scidb::Query> q) {
+        typedef scidb::OperatorParamLogicalExpression OpLogExpr;
+        using scidb::Value;
+        
+        Value v = 
+            evaluate(dynamic_cast<OpLogExpr&>(p).getExpression(),
+                     q,
+                     scidb::TID_STRING);
         return v.getString();
     }
 } // anonymous namespace    
@@ -37,14 +51,15 @@ namespace {
 ////////////////////////////////////////////////////////////////////////
 // Boilerplate
 ////////////////////////////////////////////////////////////////////////
-// FIXME: This could be a pipelined loader that doesn't just load into an array...
+// Currently this loader loads into a MemArray and relies on the optimizer
+// to redistribute the resulting data.  We could instead make the loader
+// a delegate array using special iterators that loads data lazily.
 
 // Logical
 class LogicalLoadHdf : public scidb::LogicalOperator {
 public:
     LogicalLoadHdf(const std::string& logicalName, const std::string& alias)
         : scidb::LogicalOperator(logicalName, alias) {
-        ADD_PARAM_CONSTANT("string"); // New array name
         ADD_PARAM_CONSTANT("string"); // Hdf file name
         ADD_PARAM_CONSTANT("string"); // Path to array in file.
         // No initialization needed.
@@ -52,26 +67,24 @@ public:
 
     virtual scidb::ArrayDesc inferSchema(std::vector<scidb::ArrayDesc> s, 
                                          boost::shared_ptr<scidb::Query> q) {
-        typedef boost::shared_ptr<scidb::OperatorParamReference> OpParamRefP;
-        using scidb::AttributeDesc;
-        using scidb::AttributeID;
-        using scidb::DimensionDesc;
-        using scidb::TID_STRING;
         if (s.size() != 0) {
             throw SYSTEM_EXCEPTION(
                      scidb::SCIDB_SE_INFER_SCHEMA, 
                      scidb::SCIDB_LE_ARRAY_ALREADY_EXIST) << "input array";
         }
-        return scidb::ArrayDesc();
+        if (_parameters.size() != 2) {
+            throw SYSTEM_EXCEPTION(
+                     scidb::SCIDB_SE_INFER_SCHEMA, 
+                     scidb::SCIDB_LE_WRONG_OPERATOR_ARGUMENTS_COUNT) << 
+                "loadhdf" << 2 << _parameters.size();
+        }
 
-        //Not sure what to return right now.
-        scidb::Attributes attrs(2);
-        attrs[0] = AttributeDesc((AttributeID)0, "hdffile",  TID_STRING, 0, 0 );
-        attrs[1] = AttributeDesc((AttributeID)0, "hdfpath",  TID_STRING, 0, 0 );
-        scidb::Dimensions dims(1);
-        dims[0] = DimensionDesc("i", 0, 0, 0, 0, 2, 0);
-        return scidb::ArrayDesc("loadhdf", attrs, dims);
+        std::string filePath = extractLogicalParam(*_parameters[0], q);
+        std::string hdf5Path = extractLogicalParam(*_parameters[1], q);
+        H5Array ha(filePath, hdf5Path);
+        boost::shared_ptr<scidb::ArrayDesc> arrayDesc = ha.arrayDesc();
 
+        return *arrayDesc;
     }
 };
 namespace scidb {
@@ -93,22 +106,38 @@ public:
                                   schema) {
     }
     
+    bool changesDistribution(vector<scidb::ArrayDesc> const& inputSchemas) const
+    {
+       return true;
+    }
+
+    scidb::ArrayDistribution getOutputDistribution(vector<scidb::ArrayDistribution> const& inputDistributions,
+                                                   vector<scidb::ArrayDesc> const& inputSchemas) const
+    {
+        return scidb::ArrayDistribution(scidb::psLocalInstance);
+    }
+
     boost::shared_ptr<scidb::Array> execute(ArrayVector& inputArrays, 
                                             boost::shared_ptr<scidb::Query> q) {
+        boost::shared_ptr<scidb::Array> retVal;
         assert(inputArrays.size() == 0);
 
         // this is a coordinator-only load
         if (q->isCoordinator())
         {
-            loadHdf(
-                extractParam(*_parameters[1]), // path to h5 file
-                extractParam(*_parameters[2]), // path to array
-                extractParam(*_parameters[0]), // array name
-                q // "query" now required as of scidb svn r3567
-                );
+            retVal = 
+                loadHdf(
+                    extractPhysicalParam(*_parameters[0]), // path to h5 file
+                    extractPhysicalParam(*_parameters[1]), // path to array data set
+                    q // "query"
+                    );
         }
-        // Not sure what to return as an array right now.
-        return ArrayPtr();
+        else
+        {
+            retVal.reset(new scidb::MemArray(_schema, q));
+        }
+
+        return retVal;
     }
 };
 

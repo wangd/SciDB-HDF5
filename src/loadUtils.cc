@@ -21,21 +21,10 @@
 #include "array/Array.h"
 #include "array/DBArray.h"
 
-void scidbCreateArray(std::string const& arrayName, 
-                      scidb::ArrayDesc& aDesc)
-{
-    scidb::SystemCatalog& catalog = *scidb::SystemCatalog::getInstance();
-    if(catalog.containsArray(arrayName)) { // delete if existing.
-        catalog.deleteArray(arrayName);
-    }
-    aDesc.setName(arrayName);
-    catalog.addArray(aDesc, scidb::psLocalInstance);
-}
-
 ScidbArrayCopier::ScidbArrayCopier(scidb::ArrayDesc& arrayDesc, 
                                    int attrCount,
                                    boost::shared_ptr<scidb::Query>& q)
-    : _array(scidb::DBArray::newDBArray(arrayDesc, q)), 
+    : _array(new scidb::MemArray(arrayDesc, q)), 
       _query(q),
       _attrCount(attrCount)
 {

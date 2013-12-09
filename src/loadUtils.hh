@@ -25,7 +25,8 @@
 // Forward
 namespace scidb {
     class ArrayDesc;
-    class DBArray;
+    class Array;
+    class MemArray;
     class Query;
     class ChunkIterator;
 }
@@ -54,9 +55,11 @@ public:
 
     void copyChunks(Source& target);
     void copyChunk(int attNo, Source& target);
+    boost::shared_ptr<scidb::Array> getArray()
+        { return _array; }
 
 private:
-    boost::shared_ptr<scidb::DBArray> _array;
+    boost::shared_ptr<scidb::Array> _array;
     boost::shared_ptr<scidb::Query> _query;
     int _attrCount;
 };
