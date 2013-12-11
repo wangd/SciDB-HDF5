@@ -21,21 +21,10 @@
 #include "array/Array.h"
 #include "array/DBArray.h"
 
-scidb::ArrayID scidbCreateArray(std::string const& arrayName, 
-                                scidb::ArrayDesc& aDesc) {
-
-    scidb::SystemCatalog& catalog = *scidb::SystemCatalog::getInstance();
-    if(catalog.containsArray(arrayName)) { // delete if existing.
-        catalog.deleteArray(arrayName);
-    }
-    aDesc.setName(arrayName);
-    return catalog.addArray(aDesc, scidb::psLocalInstance); 
-}
-
-ScidbArrayCopier::ScidbArrayCopier(scidb::ArrayID& arrayId, 
+ScidbArrayCopier::ScidbArrayCopier(scidb::ArrayDesc& arrayDesc, 
                                    int attrCount,
                                    boost::shared_ptr<scidb::Query>& q)
-    : _array(new scidb::DBArray(arrayId, q)), 
+    : _array(new scidb::MemArray(arrayDesc, q)), 
       _query(q),
       _attrCount(attrCount)
 {
@@ -51,13 +40,11 @@ void ScidbArrayCopier::copyChunks(Source& source) {
 void ScidbArrayCopier::copyChunk(int attNo, Source& source) {
     scidb::Coordinates const& coords = source.coords(); 
     boost::shared_ptr<scidb::ArrayIterator> ai;
+    boost::shared_ptr<scidb::ChunkIterator> ci;
     ai = _array->getIterator(attNo);
     scidb::Chunk& outChunk = ai->newChunk(coords);
-    //std::cout << "chunk footprint=" << source.footprint(attNo) << std::endl;
-    outChunk.allocate(source.footprint(attNo));
-    outChunk.setSparse(false); // Never sparse
-    source.copy(attNo, outChunk.getData());
-    outChunk.setCount(source.elementCount(attNo, true));
-    outChunk.write(_query);
+    ci = outChunk.getIterator(_query, scidb::ChunkIterator::SEQUENTIAL_WRITE);
+    source.copyIntoChunk(attNo, *ci);
+    ci->flush();
 }
 
