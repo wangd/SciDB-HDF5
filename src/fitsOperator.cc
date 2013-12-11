@@ -25,7 +25,6 @@ namespace {
     public:
         FitsSource(FitsArray& fa) : _fa(fa), _coords(fa.rank(), 0) {
         }
-
         virtual scidb::Coordinates const& coords() const {
             return _coords;
         }
@@ -59,7 +58,7 @@ void loadFits(std::string const& filePath,
     std::cout << "Constructed FitsArray(" << filePath << ", " 
               << hduNumber << ")\n";
     scidb::ArrayID aid = scidbCreateArray(arrayName, *fa.arrayDesc());
-    std::cout << "Created array(" << arrayName << std::endl;
+    std::cout << "Created array(" << arrayName << ")" << std::endl;
 
     ScidbArrayCopier copier(aid, 1, q);
     std::cout << "Prepared copier" << std::endl;
@@ -67,5 +66,6 @@ void loadFits(std::string const& filePath,
     std::cout << "Prepared fitsSource" << std::endl;
 
     copier.copyChunk(0, f);
-    std::cout << "Copied chunk." << std::endl;
+    std::cout << "Copied chunk (" << f.elementCount(0, true) 
+              << " elements)" << std::endl;
 }

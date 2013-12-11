@@ -38,7 +38,6 @@ namespace {
         // FIXME: Is there a better way to extract from a valarray?
         return memcpy(buffer, &contents[0], contents.size() * sizeof(T));
     }
-    
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -46,8 +45,8 @@ namespace {
 ////////////////////////////////////////////////////////////////////////
 FitsAttr::FitsAttr(int bitPix_, double scale_, double zero_) 
     : bitPix(bitPix_), scale(scale_), zero(zero_) {
-    int neededBitPix = std::labs(bitPix);
     assert(bitPix != 0);
+    int neededBitPix = std::labs(bitPix);
     if(scale > 1) {
         double multiplier = scale;
         while(multiplier > 1) {
@@ -58,11 +57,14 @@ FitsAttr::FitsAttr(int bitPix_, double scale_, double zero_)
     byteSize = (neededBitPix >> 3); 
     if(bitPix > 0) {
         hasSign = (zero != (1 <<(bitPix-1)));
+        floating = false;
     } else {
         hasSign = true;
         floating = true;
     }
-
+    //std::cout << "bitpix: " << bitPix << ", byteSize: " << byteSize
+    // << ", scale: " << scale << ", zero: " << zero << ", floating: " 
+    // << floating << ", hasSign: " << hasSign << std::endl;
 }
 
 
@@ -70,7 +72,7 @@ FitsAttr::FitsAttr(int bitPix_, double scale_, double zero_)
 // FitsArray public:
 ////////////////////////////////////////////////////////////////////////
 FitsArray::FitsArray(std::string const& fName, int hduNum) 
-    :_hduNum(hduNum) {
+    :_hduNum(hduNum), _pCount(0), _gCount(1) {
     _fits.reset(new CCfits::FITS(fName, CCfits::Read));
     assert(_fits.get());
     if(hduNum == 0) {
@@ -90,6 +92,8 @@ FitsArray::Size FitsArray::elementCount() const {
 }
 
 FitsArray::Size FitsArray::footprint() const {
+    //std::cout << _attr->byteSize << "*" << _gCount << "* (" 
+    //          << elementCount() << " +" <<  _pCount << ")" << std::endl;
     return _attr->byteSize * _gCount * (elementCount() + _pCount);
 }
 
