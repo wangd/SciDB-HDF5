@@ -1,5 +1,9 @@
 History file for SciDB-HDF5
 ===========================
+2013-12-11 Version 0.6.0: Update to Scidb 13.11 API 
+           Major semantic change: loadhdf() no longer stores 
+           to an array--query must include store() operator.
+2012-06-13 Version 0.5.0: Updated to Scidb 12.3 API
 2012-04-25 Version 0.4.3: Updated to 2011-10 Scidb api (r3567).
            Improved cmake build handling
 2011-09-07 Version 0.4.2: Code cleanup

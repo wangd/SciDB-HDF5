@@ -52,8 +52,8 @@ but may need development to handle more general usage.  It does not
 contain known memory leaks or scalability problems, but has not
 undergone extensive testing.  
 
-FITS tables are not currently supported, since they do not have natural
-counterparts in SciDB.
+FITS *tables* are not currently supported, since they do not have natural
+counterparts in SciDB. FITS arrays seem to work fine.
 
 
 AFL function signatures:
@@ -67,12 +67,15 @@ array permanently, wrap the result inside of SciDB's "store()" operator
 (see examples below).
 
 libloadfits.so:
-void loadhdf(<target array name>, <full path of FITS file>, 
+void loadfits(<target array name>, <full path of FITS file>, 
              <HDU number>)
 
 This function overwrites the target specified array, which is deleted
 if necessary and constructed with a shape and form according to the
-source array's original shape.
+source array's original shape. Please note that loadfits() writes
+directly to an array, and thus does not really work with distributed
+arrays. It has not yet been updated to return a temporary
+array. Patches welcome.
 
 
 Operating notes
@@ -145,7 +148,7 @@ below) unless otherwise noted.
 
 Copyright Notice:
 -----------------
- Copyright 2011 Jacek Becla, Daniel Liwei Wang
+ Copyright 2012 Jacek Becla, Daniel Liwei Wang
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
